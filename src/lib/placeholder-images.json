@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "1",
+      "description": "Fresh Organic Apples",
+      "imageUrl": "https://images.unsplash.com/photo-1501925654609-7b41cf395eb8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxvcmdhbmljJTIwYXBwbGVzfGVufDB8fHx8MTc3MDM5NTY5Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "organic apples"
+    },
+    {
+      "id": "2",
+      "description": "Green Leafy Spinach",
+      "imageUrl": "https://images.unsplash.com/photo-1654155291968-f70fca9b0451?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxmcmVzaCUyMHNwaW5hY2h8ZW58MHx8fHwxNzcwNDAzMDE5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fresh spinach"
+    },
+    {
+      "id": "3",
+      "description": "Farm Fresh Milk",
+      "imageUrl": "https://images.unsplash.com/photo-1585083969600-495ee7e3604b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtaWxrJTIwYm90dGxlfGVufDB8fHx8MTc3MDQzMTc5OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "milk bottle"
+    },
+    {
+      "id": "4",
+      "description": "Whole Wheat Bread",
+      "imageUrl": "https://images.unsplash.com/photo-1658135354850-ff995e669b9c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx3aGVhdCUyMGJyZWFkfGVufDB8fHx8MTc3MDQ4Njc0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wheat bread"
+    },
+    {
+      "id": "5",
+      "description": "Organic Carrots",
+      "imageUrl": "https://images.unsplash.com/photo-1627654315138-b9a1ac2c80d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxmcmVzaCUyMGNhcnJvdHN8ZW58MHx8fHwxNzcwNDQxMTE5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fresh carrots"
+    },
+    {
+      "id": "6",
+      "description": "Ripe Yellow Bananas",
+      "imageUrl": "https://images.unsplash.com/photo-1642142532508-510e0a4ac949?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx5ZWxsb3clMjBiYW5hbmFzfGVufDB8fHx8MTc3MDQ0NzEzMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "yellow bananas"
+    }
+  ]
 }
