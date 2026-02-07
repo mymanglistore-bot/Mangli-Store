@@ -1,0 +1,262 @@
+{
+  "entities": {
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a grocery product available for purchase.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the product."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the product."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the product."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the product image.",
+          "format": "uri"
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the product (e.g., fruits, vegetables, dairy)."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "price",
+        "imageUrl",
+        "category"
+      ]
+    },
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a customer order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the order."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Order)"
+        },
+        "orderDate": {
+          "type": "string",
+          "description": "Date and time when the order was placed.",
+          "format": "date-time"
+        },
+        "subtotal": {
+          "type": "number",
+          "description": "Subtotal of the order before delivery fees."
+        },
+        "deliveryCharge": {
+          "type": "number",
+          "description": "Delivery charge for the order."
+        },
+        "grandTotal": {
+          "type": "number",
+          "description": "Total amount of the order including delivery fees."
+        },
+        "orderItems": {
+          "type": "array",
+          "description": "List of items in the order.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deliveryAddress": {
+          "type": "string",
+          "description": "Delivery Address of the order"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "orderDate",
+        "subtotal",
+        "deliveryCharge",
+        "grandTotal",
+        "orderItems",
+        "deliveryAddress"
+      ]
+    },
+    "OrderItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OrderItem",
+      "type": "object",
+      "description": "Represents an item within an order.  This allows tracking quantity and referencing the product.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the order item."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to Order. (Relationship: Order 1:N OrderItem)"
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N OrderItem)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the product in the order item."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product at the time of the order."
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "productId",
+        "quantity",
+        "price"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the EcoCart platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Last name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Phone number of the user."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the user."
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "phoneNumber",
+        "address"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Stores grocery product information. No denormalized authorization fields required.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "Unique identifier for the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Stores customer order data. Path-based ownership using userId.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            },
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/orders/{orderId}/order_items/{orderItemId}",
+        "definition": {
+          "entityName": "OrderItem",
+          "schema": {
+            "$ref": "#/backend/entities/OrderItem"
+          },
+          "description": "Stores individual order items within an order. Path-based ownership using userId.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            },
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            },
+            {
+              "name": "orderItemId",
+              "description": "Unique identifier for the order item."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the EcoCart application's features, including product catalog management, user orders, and administrative access, while adhering to the principles of Authorization Independence, Structural Segregation, and Access Modeling. The structure prioritizes using the free Spark Plan and making security rules simple and efficient.\n\n1.  **Products Collection:** A top-level `products` collection stores all product information. This allows for easy listing and retrieval of product data. There are no subcollections as the product data will not become too large to exceed Firestore limits.\n2.  **Users and Orders:** User data is stored in a `users` collection, with each user having a subcollection `orders`. This establishes clear ownership and allows easy querying of a user's order history.\n3. **Order Items Subcollection:** Each order has a subcollection `order_items`. This is a subcollection as the order data will likely grow significantly and will exceed Firestore limits.\n\n**Authorization Independence and QAPs:**\n*   **Products:** All products can be read by anyone. An admin panel manages products. The admin panel is protected via password.\n*   **Orders:** Orders are placed inside `/users/{userId}/orders/{orderId}`. This structure enforces path-based ownership, simplifying security rules and ensuring users can only access their own orders. The `userId` in the path serves as the owner.\n*   **Order Items:** Placed inside `/users/{userId}/orders/{orderId}/order_items/{orderItemId}`. This structure is used to support the `Orders` collection. The `userId` in the path serves as the owner.\n\nThis structure is designed to provide a scalable and secure solution for EcoCart, facilitating easy data access, management, and secure authorization."
+  }
+}
