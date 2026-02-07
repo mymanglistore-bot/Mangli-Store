@@ -1,20 +1,9 @@
 
 "use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 
 export default function LegacyAdminPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // Redirect to home since the admin route has moved to /Adminpanel
-    router.replace('/');
-  }, [router]);
-
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-muted-foreground">Redirecting...</p>
-    </div>
-  );
+  // Return a 404 for the old admin route to remove the "Admin" word/path from public view
+  return notFound();
 }

@@ -14,7 +14,6 @@ export function Navbar() {
           </div>
           <span className="font-headline text-2xl font-bold text-primary">EcoCart</span>
         </Link>
-        {/* Admin link removed from here as per request */}
       </div>
     </nav>
   );
