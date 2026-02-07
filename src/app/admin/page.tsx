@@ -6,9 +6,12 @@ import { Navbar } from '@/components/Navbar';
 import { ADMIN_PASS } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Plus, Trash2, Edit2, ShieldAlert, Database, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -18,8 +21,17 @@ import { collection, doc } from 'firebase/firestore';
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
+
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    price: "",
+    description: "",
+    category: "Groceries",
+    imageUrl: ""
+  });
 
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -38,6 +50,39 @@ export default function AdminPage() {
         description: "Incorrect administrative password.",
       });
     }
+  };
+
+  const handleAddProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!firestore) return;
+
+    const productsRef = collection(firestore, 'products');
+    const newDocRef = doc(productsRef);
+    
+    const productData: Product = {
+      id: newDocRef.id,
+      name: newProduct.name,
+      price: Number(newProduct.price),
+      description: newProduct.description,
+      category: newProduct.category,
+      imageUrl: newProduct.imageUrl || "https://picsum.photos/seed/new/400/300"
+    };
+
+    setDocumentNonBlocking(newDocRef, productData, { merge: true });
+    
+    setIsAddDialogOpen(false);
+    setNewProduct({
+      name: "",
+      price: "",
+      description: "",
+      category: "Groceries",
+      imageUrl: ""
+    });
+
+    toast({
+      title: "Product Added",
+      description: `${productData.name} has been added to the catalog.`,
+    });
   };
 
   const deleteProduct = (productId: string) => {
@@ -81,7 +126,7 @@ export default function AdminPage() {
               <ShieldAlert className="h-8 w-8" />
             </div>
             <CardTitle className="font-headline text-2xl">Secure Admin Access</CardTitle>
-            <CardDescription>Enter the jumbo password to manage your shop</CardDescription>
+            <CardDescription>Enter the administrative password to manage your shop</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Input 
@@ -115,10 +160,76 @@ export default function AdminPage() {
               <Database className="h-4 w-4" />
               Seed Database
             </Button>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add New Product
-            </Button>
+            
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add New Product
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <form onSubmit={handleAddProduct}>
+                  <DialogHeader>
+                    <DialogTitle>Add New Product</DialogTitle>
+                    <DialogDescription>
+                      Enter the details for the new product in your catalog.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Product Name</Label>
+                      <Input 
+                        id="name" 
+                        required 
+                        value={newProduct.name}
+                        onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="price">Price (Rs.)</Label>
+                      <Input 
+                        id="price" 
+                        type="number" 
+                        required 
+                        value={newProduct.price}
+                        onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="category">Category</Label>
+                      <Input 
+                        id="category" 
+                        required 
+                        value={newProduct.category}
+                        onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea 
+                        id="description" 
+                        required 
+                        value={newProduct.description}
+                        onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="imageUrl">Image URL (Optional)</Label>
+                      <Input 
+                        id="imageUrl" 
+                        placeholder="https://..."
+                        value={newProduct.imageUrl}
+                        onChange={(e) => setNewProduct({...newProduct, imageUrl: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit">Save Product</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -168,7 +279,7 @@ export default function AdminPage() {
                   {(!products || products.length === 0) && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                        No products found. Use "Seed Database" to add initial items.
+                        No products found. Use "Seed Database" to add initial items or click "Add New Product".
                       </TableCell>
                     </TableRow>
                   )}
