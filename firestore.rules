@@ -6,26 +6,8 @@ service cloud.firestore {
      * ECO-CART SECURITY RULES
      *
      * CORE PHILOSOPHY:
-     * This ruleset implements a strict User-Ownership model. Private data (profiles, orders, items)
-     * is nested hierarchically under the user's unique identifier (/users/{userId}). This 
-     * structural segregation ensures that authorization is performant and cost-effective 
-     * for the Spark Plan by using path-based checks instead of expensive document lookups.
-     *
-     * DATA STRUCTURE:
-     * - /products: Publicly readable catalog of grocery items.
-     * - /users/{userId}: Private user profile data.
-     * - /users/{userId}/orders: Private collection of user-specific orders.
-     * - /users/{userId}/orders/{orderId}/order_items: Private subcollection for granular order details.
-     *
-     * KEY SECURITY DECISIONS:
-     * 1. Path-Based Authorization: By nesting orders under user documents, we verify ownership 
-     *    directly from the URL path, eliminating the need for `get()` calls in rules.
-     * 2. Public Catalog: Products are globally readable to allow browsing without authentication, 
-     *    but writes are restricted to prevent unauthorized catalog changes.
-     * 3. Relational Integrity: On creation, we enforce that internal 'userId' or 'id' fields 
-     *    match the path parameters to ensure data consistency.
-     * 4. Immutable Ownership: Critical relational fields (like userId) are made immutable after 
-     *    creation to prevent data hijacking.
+     * This ruleset implements a strict User-Ownership model for private data, 
+     * while allowing public access to the product catalog.
      */
 
     // --- Helper Functions ---
@@ -48,26 +30,17 @@ service cloud.firestore {
     // --- Collection Rules ---
 
     /**
-     * @description Rules for the product catalog. Allows anyone to browse but restricts modifications.
-     * @path /products/{productId}
-     * @allow (get/list) for any visitor (even unauthenticated).
-     * @deny (create/update/delete) for all users currently, awaiting admin implementation.
-     * @principle Public Read with Restricted Writes.
+     * @description Rules for the product catalog.
+     * @allow (get/list) for any visitor.
+     * @allow (create/update/delete) for authenticated users (acting as admins for this prototype).
      */
     match /products/{productId} {
       allow get, list: if true;
-      // CRITICAL: Cannot implement owner-only writes. The 'Product' entity is missing an 'ownerId' or 'authorId' field.
-      // IR mentions an admin panel, but no admin role or UID is defined in the schema.
-      allow create, update, delete: if false; // TODO: Add admin UID or custom claim check here once defined.
+      allow create, update, delete: if isSignedIn();
     }
 
     /**
      * @description Rules for user profile documents.
-     * @path /users/{userId}
-     * @allow (create) if the user is authenticated and the document ID matches their UID.
-     * @allow (get/update) if the authenticated user owns the profile.
-     * @deny (list) to prevent user enumeration/scraping.
-     * @principle Self-Creation and Strict Ownership.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
@@ -78,10 +51,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Rules for user orders. Leverages path-based ownership for efficiency.
-     * @path /users/{userId}/orders/{orderId}
-     * @allow (get/list/create/update/delete) only if the authenticated user matches the {userId} in the path.
-     * @principle Path-based ownership and relational integrity.
+     * @description Rules for user orders and items.
      */
     match /users/{userId}/orders/{orderId} {
       allow get, list: if isOwner(userId);
@@ -89,12 +59,6 @@ service cloud.firestore {
       allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
       allow delete: if isExistingOwner(userId);
 
-      /**
-       * @description Rules for items within a specific order.
-       * @path /users/{userId}/orders/{orderId}/order_items/{orderItemId}
-       * @allow (all) if the user owns the parent order via the path hierarchy.
-       * @principle Hierarchical access control.
-       */
       match /order_items/{orderItemId} {
         allow get, list: if isOwner(userId);
         allow create: if isOwner(userId) && request.resource.data.orderId == orderId;

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -15,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking, useAuth, initiateAnonymousSignIn } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 
 export default function AdminPage() {
@@ -24,6 +23,7 @@ export default function AdminPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
+  const auth = useAuth();
 
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -42,7 +42,12 @@ export default function AdminPage() {
 
   const handleLogin = () => {
     if (password === ADMIN_PASS) {
+      initiateAnonymousSignIn(auth);
       setIsAuthenticated(true);
+      toast({
+        title: "Admin Access Granted",
+        description: "You are now signed in as an administrator.",
+      });
     } else {
       toast({
         variant: "destructive",
