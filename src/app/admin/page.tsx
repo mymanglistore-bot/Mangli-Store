@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Trash2, Edit2, ShieldAlert, Database, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, ShieldAlert, Database, Loader2, Upload, X } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -57,9 +57,38 @@ export default function AdminPage() {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 1MB limit for Firestore document size constraints (base64 increases size)
+      if (file.size > 800 * 1024) { 
+        toast({
+          variant: "destructive",
+          title: "Image too large",
+          description: "Please choose an image smaller than 800KB for the free plan.",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewProduct({ ...newProduct, imageUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore) return;
+    if (!newProduct.imageUrl) {
+      toast({
+        variant: "destructive",
+        title: "Image Required",
+        description: "Please upload a product image.",
+      });
+      return;
+    }
 
     const productsRef = collection(firestore, 'products');
     const newDocRef = doc(productsRef);
@@ -70,7 +99,7 @@ export default function AdminPage() {
       price: Number(newProduct.price),
       description: newProduct.description,
       category: newProduct.category,
-      imageUrl: newProduct.imageUrl || "https://picsum.photos/seed/new/400/300"
+      imageUrl: newProduct.imageUrl
     };
 
     setDocumentNonBlocking(newDocRef, productData, { merge: true });
@@ -187,6 +216,7 @@ export default function AdminPage() {
                       <Input 
                         id="name" 
                         required 
+                        placeholder="e.g. Fresh Tomatoes"
                         value={newProduct.name}
                         onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
                       />
@@ -197,6 +227,7 @@ export default function AdminPage() {
                         id="price" 
                         type="number" 
                         required 
+                        placeholder="0.00"
                         value={newProduct.price}
                         onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
                       />
@@ -215,22 +246,50 @@ export default function AdminPage() {
                       <Textarea 
                         id="description" 
                         required 
+                        placeholder="Tell customers about this product..."
                         value={newProduct.description}
                         onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="imageUrl">Image URL (Optional)</Label>
-                      <Input 
-                        id="imageUrl" 
-                        placeholder="https://..."
-                        value={newProduct.imageUrl}
-                        onChange={(e) => setNewProduct({...newProduct, imageUrl: e.target.value})}
-                      />
+                      <Label htmlFor="image">Product Image</Label>
+                      <div className="flex flex-col gap-2">
+                        {newProduct.imageUrl ? (
+                          <div className="relative group w-full aspect-video rounded-lg overflow-hidden border">
+                            <img 
+                              src={newProduct.imageUrl} 
+                              alt="Upload preview" 
+                              className="w-full h-full object-cover"
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => setNewProduct({...newProduct, imageUrl: ""})}
+                              className="absolute top-2 right-2 bg-destructive text-destructive-foreground p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer relative">
+                            <Upload className="h-8 w-8 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Click to upload from PC</span>
+                            <Input 
+                              id="image" 
+                              type="file" 
+                              accept="image/*"
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                              onChange={handleFileChange}
+                            />
+                          </div>
+                        )}
+                        <p className="text-[10px] text-muted-foreground">
+                          Max size: 800KB. Optimized for standard free plan documents.
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit">Save Product</Button>
+                    <Button type="submit" className="w-full">Save Product</Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
