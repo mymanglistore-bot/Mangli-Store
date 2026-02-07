@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ShoppingBasket, ShieldCheck } from 'lucide-react';
+import { ShoppingBasket } from 'lucide-react';
 
 export function Navbar() {
   return (
@@ -14,15 +14,7 @@ export function Navbar() {
           </div>
           <span className="font-headline text-2xl font-bold text-primary">EcoCart</span>
         </Link>
-        <div className="flex items-center gap-4">
-          <Link 
-            href="/admin" 
-            className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 text-sm font-medium"
-          >
-            <ShieldCheck className="h-4 w-4" />
-            Admin
-          </Link>
-        </div>
+        {/* Admin link removed from here as per request */}
       </div>
     </nav>
   );
