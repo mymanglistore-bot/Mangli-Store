@@ -7,26 +7,26 @@ import { ADMIN_PASS } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Trash2, Edit2, ShieldAlert } from 'lucide-react';
+import { Plus, Trash2, Edit2, ShieldAlert, Database, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
-  const [products, setProducts] = useState<Product[]>(
-    PlaceHolderImages.map(img => ({
-      id: img.id,
-      name: img.description,
-      price: Math.floor(Math.random() * 100) + 20,
-      description: `High quality ${img.description.toLowerCase()}.`,
-      imageUrl: img.imageUrl,
-      category: 'Groceries'
-    }))
-  );
   const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const productsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'products');
+  }, [firestore]);
+
+  const { data: products, isLoading } = useCollection<Product>(productsQuery);
 
   const handleLogin = () => {
     if (password === ADMIN_PASS) {
@@ -40,11 +40,35 @@ export default function AdminPage() {
     }
   };
 
-  const deleteProduct = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+  const deleteProduct = (productId: string) => {
+    if (!firestore) return;
+    const docRef = doc(firestore, 'products', productId);
+    deleteDocumentNonBlocking(docRef);
     toast({
       title: "Product Deleted",
       description: "Item has been removed from catalog.",
+    });
+  };
+
+  const seedDatabase = () => {
+    if (!firestore) return;
+    
+    PlaceHolderImages.forEach((img) => {
+      const docRef = doc(firestore, 'products', img.id);
+      const productData: Product = {
+        id: img.id,
+        name: img.description,
+        price: Math.floor(Math.random() * 100) + 20,
+        description: `High quality ${img.description.toLowerCase()} sourced locally.`,
+        imageUrl: img.imageUrl,
+        category: 'Groceries'
+      };
+      setDocumentNonBlocking(docRef, productData, { merge: true });
+    });
+
+    toast({
+      title: "Database Seeded",
+      description: "Initial products have been added to the catalog.",
     });
   };
 
@@ -86,52 +110,71 @@ export default function AdminPage() {
             <h1 className="text-3xl font-headline font-bold">Inventory Management</h1>
             <p className="text-muted-foreground">Manage your products and pricing</p>
           </div>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add New Product
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={seedDatabase} className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Seed Database
+            </Button>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add New Product
+            </Button>
+          </div>
         </div>
 
         <Card>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[80px]">Image</TableHead>
-                  <TableHead>Product Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded-md" />
-                    </TableCell>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>Rs. {product.price}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => deleteProduct(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            {isLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[80px]">Image</TableHead>
+                    <TableHead>Product Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {products?.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded-md" />
+                      </TableCell>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>{product.category}</TableCell>
+                      <TableCell>Rs. {product.price}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => deleteProduct(product.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!products || products.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                        No products found. Use "Seed Database" to add initial items.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </main>

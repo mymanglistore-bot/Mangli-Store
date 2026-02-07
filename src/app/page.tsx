@@ -4,20 +4,21 @@
 import { Navbar } from '@/components/Navbar';
 import { ProductCard } from '@/components/ProductCard';
 import { CartDrawer } from '@/components/CartDrawer';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import { Product } from '@/lib/types';
-
-// Mock products based on placeholder images
-const MOCK_PRODUCTS: Product[] = PlaceHolderImages.map(img => ({
-  id: img.id,
-  name: img.description,
-  price: Math.floor(Math.random() * 100) + 20,
-  description: `High quality ${img.description.toLowerCase()} sourced locally and grown with care.`,
-  imageUrl: img.imageUrl,
-  category: 'Groceries'
-}));
+import { ShoppingBasket, Loader2 } from 'lucide-react';
 
 export default function Home() {
+  const firestore = useFirestore();
+  
+  const productsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'products');
+  }, [firestore]);
+
+  const { data: products, isLoading } = useCollection<Product>(productsQuery);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -66,11 +67,21 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {MOCK_PRODUCTS.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : products && products.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-white rounded-2xl border border-dashed">
+              <p className="text-muted-foreground">No products available in the catalog yet.</p>
+            </div>
+          )}
         </section>
       </main>
 
@@ -96,5 +107,3 @@ export default function Home() {
     </div>
   );
 }
-
-import { ShoppingBasket } from 'lucide-react';

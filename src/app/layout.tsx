@@ -1,8 +1,8 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 import {CartProvider} from '@/context/CartContext';
 import {Toaster} from '@/components/ui/toaster';
+import {FirebaseClientProvider} from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'EcoCart | Fresh & Clean Groceries',
@@ -22,10 +22,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <CartProvider>
-          {children}
-          <Toaster />
-        </CartProvider>
+        <FirebaseClientProvider>
+          <CartProvider>
+            {children}
+            <Toaster />
+          </CartProvider>
+        </FirebaseClientProvider>
       </body>
     </html>
   );
