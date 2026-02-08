@@ -75,8 +75,8 @@ export default function Home() {
 
       <footer className="bg-background border-t py-12">
         <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-24 h-12 relative overflow-hidden bg-transparent">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-16 h-10 relative overflow-hidden bg-transparent">
               <Image
                 src={logoUrl}
                 alt="Mangli.Store Logo"
@@ -85,6 +85,9 @@ export default function Home() {
                 data-ai-hint="grocery logo"
               />
             </div>
+            <span className="font-headline font-bold text-xl tracking-tighter text-primary">
+              Mangli.Store
+            </span>
           </div>
           <div className="mt-8 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
             &copy; {new Date().getFullYear()} Mangli.Store Delivery Service

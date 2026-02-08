@@ -43,9 +43,9 @@ export function Navbar() {
 
       {/* Main Navigation Bar */}
       <nav className="w-full border-b bg-background/90 backdrop-blur-md">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group transition-transform hover:scale-105 active:scale-95">
-            <div className="w-24 h-12 relative overflow-hidden bg-transparent">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-center">
+          <Link href="/" className="flex items-center gap-3 group transition-transform hover:scale-105 active:scale-95">
+            <div className="w-16 h-10 relative overflow-hidden bg-transparent">
               <Image
                 src={logoUrl}
                 alt="Mangli.Store Logo"
@@ -54,6 +54,9 @@ export function Navbar() {
                 data-ai-hint="grocery logo"
               />
             </div>
+            <span className="font-headline font-bold text-2xl tracking-tighter text-primary">
+              Mangli.Store
+            </span>
           </Link>
         </div>
       </nav>
