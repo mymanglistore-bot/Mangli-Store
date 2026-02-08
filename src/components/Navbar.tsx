@@ -34,7 +34,7 @@ export function Navbar() {
       <nav className="w-full border-b bg-background/90 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group transition-transform hover:scale-105 active:scale-95">
-            <div className="w-10 h-10 relative overflow-hidden rounded-full shadow-md shadow-primary/20 bg-primary/10">
+            <div className="w-12 h-12 relative overflow-hidden rounded-full shadow-md shadow-primary/20 bg-primary/10">
               <Image
                 src={logo?.imageUrl || "https://picsum.photos/seed/manglistore/100/100"}
                 alt="Mangli.Store Logo"
@@ -43,7 +43,6 @@ export function Navbar() {
                 data-ai-hint="grocery logo"
               />
             </div>
-            <span className="font-headline text-2xl font-bold text-primary tracking-tight">Mangli.Store</span>
           </Link>
         </div>
       </nav>
