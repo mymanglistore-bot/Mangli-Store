@@ -38,6 +38,7 @@ export default function Home() {
               src={settings?.heroImageUrl || "https://picsum.photos/seed/manglistore/1200/400"} 
               alt="Mangli.Store Banner" 
               className="w-full h-auto max-h-[500px] object-cover block opacity-80"
+              data-ai-hint="grocery store banner"
             />
           </div>
         </section>
