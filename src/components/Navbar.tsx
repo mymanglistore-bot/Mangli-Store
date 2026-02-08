@@ -45,12 +45,12 @@ export function Navbar() {
       <nav className="w-full border-b bg-background/90 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group transition-transform hover:scale-105 active:scale-95">
-            <div className="w-12 h-12 relative overflow-hidden rounded-full shadow-md shadow-primary/20 bg-primary/10">
+            <div className="w-24 h-12 relative overflow-hidden bg-transparent">
               <Image
                 src={logoUrl}
                 alt="Mangli.Store Logo"
                 fill
-                className="object-cover"
+                className="object-contain"
                 data-ai-hint="grocery logo"
               />
             </div>

@@ -319,9 +319,9 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-6">
-                  <div className="w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center relative overflow-hidden bg-muted group">
+                  <div className="w-32 h-20 rounded-md border-2 border-dashed flex items-center justify-center relative overflow-hidden bg-muted group">
                     {settings?.logoImageUrl ? (
-                      <img src={settings.logoImageUrl} className="w-full h-full object-cover" alt="Store Logo" />
+                      <img src={settings.logoImageUrl} className="w-full h-full object-contain" alt="Store Logo" />
                     ) : (
                       <ImageIcon className="h-8 w-8 text-muted-foreground" />
                     )}
@@ -332,7 +332,7 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Click image to upload</p>
-                    <p className="text-xs text-muted-foreground">Recommended: Square PNG/JPG. Max 100KB.</p>
+                    <p className="text-xs text-muted-foreground">Recommended: PNG/JPG with transparent background. Max 100KB.</p>
                     {settings?.logoImageUrl && (
                       <Button variant="ghost" size="sm" onClick={() => setDocumentNonBlocking(doc(firestore, 'settings', 'store'), { logoImageUrl: "" }, { merge: true })} className="text-destructive h-8 px-2">
                         <X className="h-3 w-3 mr-1" /> Remove

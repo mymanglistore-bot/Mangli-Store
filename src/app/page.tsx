@@ -76,12 +76,12 @@ export default function Home() {
       <footer className="bg-background border-t py-12">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center mb-4">
-            <div className="w-12 h-12 relative overflow-hidden rounded-full shadow-sm bg-primary/10">
+            <div className="w-24 h-12 relative overflow-hidden bg-transparent">
               <Image
                 src={logoUrl}
                 alt="Mangli.Store Logo"
                 fill
-                className="object-cover"
+                className="object-contain"
                 data-ai-hint="grocery logo"
               />
             </div>
