@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from '@/components/Navbar';
@@ -32,7 +31,7 @@ export default function Home() {
               </h1>
               <p className="text-muted-foreground text-lg mb-6 max-w-lg">
                 High-quality local produce. Fast delivery. Eco-friendly packaging. 
-                Experience the clean and green way of shopping.
+                Experience the clean and green way of shopping with Mangli.Store.
               </p>
               <div className="flex flex-wrap justify-center md:justify-start gap-4">
                 <div className="bg-white px-4 py-2 rounded-full border text-xs font-bold flex items-center gap-2">
@@ -91,14 +90,14 @@ export default function Home() {
              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
               <ShoppingBasket className="text-primary-foreground h-5 w-5" />
             </div>
-            <span className="font-headline text-xl font-bold text-primary">EcoCart</span>
+            <span className="font-headline text-xl font-bold text-primary">Mangli.Store</span>
           </div>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
             Supporting local farmers and reducing waste with every delivery. 
-            Join the green revolution today.
+            Join the green revolution today with Mangli.Store.
           </p>
           <div className="mt-8 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-            &copy; {new Date().getFullYear()} EcoCart Delivery Service
+            &copy; {new Date().getFullYear()} Mangli.Store Delivery Service
           </div>
         </div>
       </footer>

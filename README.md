@@ -1,6 +1,6 @@
-# EcoCart | Fresh & Clean Groceries
+# Mangli.Store | Fresh & Clean Groceries
 
-EcoCart is a Next.js 15 application designed for easy grocery ordering via WhatsApp, optimized for the **Firebase Spark (Free) Plan**.
+Mangli.Store is a Next.js 15 application designed for easy grocery ordering via WhatsApp, optimized for the **Firebase Spark (Free) Plan**.
 
 ## 🚀 Deployment from Firebase Studio (Spark Plan)
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -12,7 +11,7 @@ export function Navbar() {
           <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
             <ShoppingBasket className="text-primary-foreground h-6 w-6" />
           </div>
-          <span className="font-headline text-2xl font-bold text-primary">EcoCart</span>
+          <span className="font-headline text-2xl font-bold text-primary">Mangli.Store</span>
         </Link>
       </div>
     </nav>
