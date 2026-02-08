@@ -31,38 +31,14 @@ export default function Home() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
+        {/* Hero Section - Image Only */}
         <section className="mb-12">
-          <div className="bg-primary/10 rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 border border-primary/20">
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-4xl md:text-6xl font-headline font-black text-primary mb-4 leading-tight">
-                Fresh Groceries <br /> Delivered to Your <br /> Doorstep.
-              </h1>
-              <p className="text-muted-foreground text-lg mb-6 max-w-lg">
-                High-quality local produce. Fast delivery. Eco-friendly packaging. 
-                Experience the clean and green way of shopping with Mangli.Store.
-              </p>
-              <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                <div className="bg-white px-4 py-2 rounded-full border text-xs font-bold flex items-center gap-2">
-                  <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                  Free Delivery above Rs. 300
-                </div>
-                <div className="bg-white px-4 py-2 rounded-full border text-xs font-bold flex items-center gap-2">
-                  <span className="w-2 h-2 bg-secondary rounded-full" />
-                  Maximum Order Rs. 2000
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 w-full max-w-sm">
-              <div className="aspect-square relative bg-secondary rounded-full flex items-center justify-center p-8 overflow-hidden shadow-inner">
-                <div className="bg-white p-6 rounded-2xl shadow-2xl rotate-3 scale-110">
-                   <img 
-                    src={settings?.heroImageUrl || "https://picsum.photos/seed/basket/400/400"} 
-                    alt="Store Hero" 
-                    className="rounded-lg object-cover w-[300px] h-[300px]"
-                   />
-                </div>
-              </div>
-            </div>
+          <div className="relative w-full overflow-hidden rounded-3xl shadow-sm border bg-muted">
+            <img 
+              src={settings?.heroImageUrl || "https://picsum.photos/seed/manglistore/1200/400"} 
+              alt="Mangli.Store Banner" 
+              className="w-full h-auto max-h-[500px] object-cover block"
+            />
           </div>
         </section>
 
