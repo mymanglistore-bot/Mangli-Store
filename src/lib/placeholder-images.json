@@ -35,6 +35,12 @@
       "description": "Ripe Yellow Bananas",
       "imageUrl": "https://images.unsplash.com/photo-1642142532508-510e0a4ac949?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx5ZWxsb3clMjBiYW5hbmFzfGVufDB8fHx8MTc3MDQ0NzEzMnww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "yellow bananas"
+    },
+    {
+      "id": "logo",
+      "description": "Mangli Store Logo",
+      "imageUrl": "https://images.unsplash.com/photo-1760456309537-b13ad8d3ed69?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxncm9jZXJ5JTIwbG9nb3xlbnwwfHx8fDE3NzA1NjgxMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "grocery logo"
     }
   ]
 }

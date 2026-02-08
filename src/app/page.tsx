@@ -7,10 +7,13 @@ import { CartDrawer } from '@/components/CartDrawer';
 import { useCollection, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Product } from '@/lib/types';
-import { ShoppingBasket, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function Home() {
   const firestore = useFirestore();
+  const logo = PlaceHolderImages.find(img => img.id === 'logo');
   
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -71,8 +74,14 @@ export default function Home() {
       <footer className="bg-background border-t py-12">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <ShoppingBasket className="text-primary-foreground h-5 w-5" />
+            <div className="w-8 h-8 relative overflow-hidden rounded-full shadow-sm bg-primary/10">
+              <Image
+                src={logo?.imageUrl || "https://picsum.photos/seed/manglistore/100/100"}
+                alt="Mangli.Store Logo"
+                fill
+                className="object-cover"
+                data-ai-hint="grocery logo"
+              />
             </div>
             <span className="font-headline text-xl font-bold text-primary">Mangli.Store</span>
           </div>
