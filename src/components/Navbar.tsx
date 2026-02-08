@@ -14,11 +14,11 @@ export function Navbar() {
       {/* Secondary Banner: Store Features */}
       <div className="bg-accent/10 backdrop-blur-sm text-foreground py-2 border-b flex flex-wrap items-center justify-center gap-x-2 sm:gap-x-6 gap-y-1 px-4 text-[9px] sm:text-[10px] md:text-xs font-semibold">
         <span className="flex items-center gap-1.5 whitespace-nowrap">
-          🚚 Free delivery on orders over ₹300
+          🚚 Free delivery on orders over Rs. 300
         </span>
         <span className="text-muted-foreground/30 hidden sm:inline">•</span>
         <span className="flex items-center gap-1.5 whitespace-nowrap">
-          📦 Maximum order limit ₹2000
+          📦 Maximum order limit Rs. 2000
         </span>
         <span className="text-muted-foreground/30 hidden sm:inline">•</span>
         <span className="flex items-center gap-1.5 whitespace-nowrap">
