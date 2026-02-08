@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles } from 'lucide-react';
+import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -234,6 +233,10 @@ export default function AdminPage() {
                             )}
                             <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleProductFileChange} />
                           </div>
+                          <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
+                            <Info className="h-3 w-3" />
+                            Recommended: 4:3 Aspect Ratio (e.g. 800x600px). Max 800KB.
+                          </p>
                         </div>
                         <div className="grid w-full items-center gap-1.5">
                           <Label htmlFor="desc">Description</Label>
@@ -309,6 +312,12 @@ export default function AdminPage() {
                     </div>
                     <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleHeroFileChange} />
                   </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    <Info className="h-3 w-3" />
+                    Recommended: Wide banner (e.g. 1200x400px). Max 1MB.
+                  </p>
                 </div>
                 {settings?.heroImageUrl && (
                   <div className="flex justify-center">
