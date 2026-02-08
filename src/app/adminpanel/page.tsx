@@ -72,8 +72,8 @@ export default function AdminPage() {
   const handleProductFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 800 * 1024) { 
-        toast({ variant: "destructive", title: "Image too large", description: "Limit is 800KB." });
+      if (file.size > 50 * 1024) { 
+        toast({ variant: "destructive", title: "Image too large", description: "Limit is 50KB." });
         return;
       }
       const reader = new FileReader();
@@ -235,7 +235,7 @@ export default function AdminPage() {
                           </div>
                           <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
                             <Info className="h-3 w-3" />
-                            Recommended: 4:3 Aspect Ratio (e.g. 400x300px). Max 800KB.
+                            Recommended: 200x150px. Max 50KB.
                           </p>
                         </div>
                         <div className="grid w-full items-center gap-1.5">
