@@ -1,10 +1,11 @@
+
 "use client";
 
 import { Navbar } from '@/components/Navbar';
 import { ProductCard } from '@/components/ProductCard';
 import { CartDrawer } from '@/components/CartDrawer';
-import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { Product } from '@/lib/types';
 import { ShoppingBasket, Loader2 } from 'lucide-react';
 
@@ -17,6 +18,13 @@ export default function Home() {
   }, [firestore]);
 
   const { data: products, isLoading } = useCollection<Product>(productsQuery);
+
+  const settingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'store');
+  }, [firestore]);
+
+  const { data: settings } = useDoc<any>(settingsRef);
 
   return (
     <div className="min-h-screen bg-background">
@@ -48,9 +56,9 @@ export default function Home() {
               <div className="aspect-square relative bg-secondary rounded-full flex items-center justify-center p-8 overflow-hidden shadow-inner">
                 <div className="bg-white p-6 rounded-2xl shadow-2xl rotate-3 scale-110">
                    <img 
-                    src="https://picsum.photos/seed/basket/400/400" 
-                    alt="Eco Basket" 
-                    className="rounded-lg"
+                    src={settings?.heroImageUrl || "https://picsum.photos/seed/basket/400/400"} 
+                    alt="Store Hero" 
+                    className="rounded-lg object-cover w-[300px] h-[300px]"
                    />
                 </div>
               </div>

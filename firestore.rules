@@ -1,70 +1,23 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * ECO-CART SECURITY RULES
-     *
-     * CORE PHILOSOPHY:
-     * This ruleset implements a strict User-Ownership model for private data, 
-     * while allowing public access to the product catalog.
-     */
-
-    // --- Helper Functions ---
-
-    /** @description Checks if the request is from an authenticated user. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the authenticated user's UID matches the provided userId from the path. */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /** @description Checks ownership and ensures the document exists for state-changing operations. */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    // --- Collection Rules ---
-
-    /**
-     * @description Rules for the product catalog.
-     * @allow (get/list) for any visitor.
-     * @allow (create/update/delete) for authenticated users (acting as admins for this prototype).
-     */
     match /products/{productId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+      allow read: if true;
+      allow write: if isSignedIn();
     }
 
-    /**
-     * @description Rules for user profile documents.
-     */
+    match /settings/store {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Rules for user orders and items.
-     */
-    match /users/{userId}/orders/{orderId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
-
-      match /order_items/{orderItemId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.orderId == orderId;
-        allow update: if isExistingOwner(userId) && request.resource.data.orderId == resource.data.orderId;
-        allow delete: if isExistingOwner(userId);
-      }
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

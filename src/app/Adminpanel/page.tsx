@@ -8,14 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Trash2, Edit2, ShieldAlert, Database, Loader2, Upload, X } from 'lucide-react';
+import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking, useAuth, initiateAnonymousSignIn } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking, useAuth, initiateAnonymousSignIn } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 
 export default function AdminPage() {
@@ -41,6 +42,13 @@ export default function AdminPage() {
 
   const { data: products, isLoading } = useCollection<Product>(productsQuery);
 
+  const settingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'store');
+  }, [firestore]);
+
+  const { data: settings } = useDoc<any>(settingsRef);
+
   const handleLogin = () => {
     if (password === ADMIN_PASS) {
       initiateAnonymousSignIn(auth);
@@ -58,21 +66,31 @@ export default function AdminPage() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProductFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 800 * 1024) { 
-        toast({
-          variant: "destructive",
-          title: "Image too large",
-          description: "Please choose an image smaller than 800KB.",
-        });
+        toast({ variant: "destructive", title: "Image too large", description: "Limit is 800KB." });
         return;
       }
+      const reader = new FileReader();
+      reader.onloadend = () => setNewProduct({ ...newProduct, imageUrl: reader.result as string });
+      reader.readAsDataURL(file);
+    }
+  };
 
+  const handleHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && firestore) {
+      if (file.size > 1024 * 1024) { 
+        toast({ variant: "destructive", title: "Image too large", description: "Hero image limit is 1MB." });
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setNewProduct({ ...newProduct, imageUrl: reader.result as string });
+        const docRef = doc(firestore, 'settings', 'store');
+        setDocumentNonBlocking(docRef, { heroImageUrl: reader.result as string }, { merge: true });
+        toast({ title: "Hero Image Updated", description: "The store banner has been changed." });
       };
       reader.readAsDataURL(file);
     }
@@ -80,19 +98,9 @@ export default function AdminPage() {
 
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) return;
-    if (!newProduct.imageUrl) {
-      toast({
-        variant: "destructive",
-        title: "Image Required",
-        description: "Please upload a product image.",
-      });
-      return;
-    }
-
+    if (!firestore || !newProduct.imageUrl) return;
     const productsRef = collection(firestore, 'products');
     const newDocRef = doc(productsRef);
-    
     const productData: Product = {
       id: newDocRef.id,
       name: newProduct.name,
@@ -101,54 +109,10 @@ export default function AdminPage() {
       category: newProduct.category,
       imageUrl: newProduct.imageUrl
     };
-
     setDocumentNonBlocking(newDocRef, productData, { merge: true });
-    
     setIsAddDialogOpen(false);
-    setNewProduct({
-      name: "",
-      price: "",
-      description: "",
-      category: "Groceries",
-      imageUrl: ""
-    });
-
-    toast({
-      title: "Product Added",
-      description: `${productData.name} has been added to the catalog.`,
-    });
-  };
-
-  const deleteProduct = (productId: string) => {
-    if (!firestore) return;
-    const docRef = doc(firestore, 'products', productId);
-    deleteDocumentNonBlocking(docRef);
-    toast({
-      title: "Product Deleted",
-      description: "Item has been removed from catalog.",
-    });
-  };
-
-  const seedDatabase = () => {
-    if (!firestore) return;
-    
-    PlaceHolderImages.forEach((img) => {
-      const docRef = doc(firestore, 'products', img.id);
-      const productData: Product = {
-        id: img.id,
-        name: img.description,
-        price: Math.floor(Math.random() * 100) + 20,
-        description: `High quality ${img.description.toLowerCase()} sourced locally.`,
-        imageUrl: img.imageUrl,
-        category: 'Groceries'
-      };
-      setDocumentNonBlocking(docRef, productData, { merge: true });
-    });
-
-    toast({
-      title: "Database Seeded",
-      description: "Initial products have been added to the catalog.",
-    });
+    setNewProduct({ name: "", price: "", description: "", category: "Groceries", imageUrl: "" });
+    toast({ title: "Product Added", description: `${productData.name} is now live.` });
   };
 
   if (!isAuthenticated) {
@@ -159,21 +123,11 @@ export default function AdminPage() {
             <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
               <ShieldAlert className="h-8 w-8" />
             </div>
-            <CardTitle className="font-headline text-2xl">Secure Admin Access</CardTitle>
-            <CardDescription>Enter the administrative password to manage your shop</CardDescription>
+            <CardTitle className="font-headline text-2xl">Admin Login</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Input 
-              type="password" 
-              placeholder="Admin Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              className="h-12 text-center text-lg"
-            />
-            <Button onClick={handleLogin} className="w-full h-12 text-lg">
-              Unlock Dashboard
-            </Button>
+            <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
+            <Button onClick={handleLogin} className="w-full h-12">Login</Button>
           </CardContent>
         </Card>
       </div>
@@ -184,161 +138,87 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-headline font-bold">Inventory Management</h1>
-            <p className="text-muted-foreground">Manage your products and pricing</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={seedDatabase} className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              Seed Database
-            </Button>
-            
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add New Product
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <form onSubmit={handleAddProduct}>
-                  <DialogHeader>
-                    <DialogTitle>Add New Product</DialogTitle>
-                    <DialogDescription>
-                      Enter the details for the new product in your catalog.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="name">Product Name</Label>
-                      <Input 
-                        id="name" 
-                        required 
-                        placeholder="e.g. Fresh Tomatoes"
-                        value={newProduct.name}
-                        onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="price">Price (Rs.)</Label>
-                      <Input 
-                        id="price" 
-                        type="number" 
-                        required 
-                        placeholder="0.00"
-                        value={newProduct.price}
-                        onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="category">Category</Label>
-                      <Input 
-                        id="category" 
-                        required 
-                        value={newProduct.category}
-                        onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea 
-                        id="description" 
-                        required 
-                        placeholder="Tell customers about this product..."
-                        value={newProduct.description}
-                        onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="image">Product Image</Label>
-                      <div className="flex flex-col gap-2">
-                        {newProduct.imageUrl ? (
-                          <div className="relative group w-full aspect-video rounded-lg overflow-hidden border">
-                            <img 
-                              src={newProduct.imageUrl} 
-                              alt="Upload preview" 
-                              className="w-full h-full object-cover"
-                            />
-                            <button 
-                              type="button"
-                              onClick={() => setNewProduct({...newProduct, imageUrl: ""})}
-                              className="absolute top-2 right-2 bg-destructive text-destructive-foreground p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer relative">
-                            <Upload className="h-8 w-8 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Click to upload from PC</span>
-                            <Input 
-                              id="image" 
-                              type="file" 
-                              accept="image/*"
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                              onChange={handleFileChange}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" className="w-full">Save Product</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
+        <Tabs defaultValue="inventory" className="w-full">
+          <TabsList className="mb-8">
+            <TabsTrigger value="inventory" className="flex items-center gap-2">
+              <Database className="h-4 w-4" /> Inventory
+            </TabsTrigger>
+            <TabsTrigger value="branding" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" /> Branding & Hero
+            </TabsTrigger>
+          </TabsList>
 
-        <Card>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px]">Image</TableHead>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {products?.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell>
-                        <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded-md" />
-                      </TableCell>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell>{product.category}</TableCell>
-                      <TableCell>Rs. {product.price}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => deleteProduct(product.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+          <TabsContent value="inventory">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold">Product Catalog</h1>
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Add Product</Button></DialogTrigger>
+                <DialogContent>
+                  <form onSubmit={handleAddProduct} className="space-y-4">
+                    <DialogHeader><DialogTitle>New Product</DialogTitle></DialogHeader>
+                    <div className="space-y-4">
+                      <div><Label>Name</Label><Input required value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} /></div>
+                      <div><Label>Price</Label><Input type="number" required value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} /></div>
+                      <div><Label>Image</Label>
+                        <div className="mt-2 border-2 border-dashed p-4 rounded-lg flex flex-col items-center justify-center relative">
+                          {newProduct.imageUrl ? <img src={newProduct.imageUrl} className="max-h-32 rounded" /> : <Upload className="h-8 w-8 text-muted-foreground" />}
+                          <Input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleProductFileChange} />
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                      </div>
+                      <div><Label>Description</Label><Textarea required value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} /></div>
+                    </div>
+                    <Button type="submit" className="w-full">Save</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <Card><Table>
+              <TableHeader><TableRow><TableHead>Image</TableHead><TableHead>Name</TableHead><TableHead>Price</TableHead><TableHead>Action</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {products?.map(p => (
+                  <TableRow key={p.id}>
+                    <TableCell><img src={p.imageUrl} className="w-10 h-10 object-cover rounded" /></TableCell>
+                    <TableCell>{p.name}</TableCell>
+                    <TableCell>Rs. {p.price}</TableCell>
+                    <TableCell><Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(firestore, 'products', p.id))}><Trash2 className="h-4 w-4" /></Button></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table></Card>
+          </TabsContent>
+
+          <TabsContent value="branding">
+            <Card>
+              <CardHeader>
+                <CardTitle>Hero Section Image</CardTitle>
+                <CardDescription>Upload an image from your PC to display in the home page banner.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="aspect-video w-full max-w-2xl mx-auto rounded-xl border-2 border-dashed flex flex-col items-center justify-center relative overflow-hidden bg-muted">
+                  {settings?.heroImageUrl ? (
+                    <img src={settings.heroImageUrl} className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                    <div className="text-white flex flex-col items-center gap-2">
+                      <Upload className="h-8 w-8" />
+                      <span className="font-bold">Change Hero Image</span>
+                    </div>
+                    <Input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleHeroFileChange} />
+                  </div>
+                </div>
+                {settings?.heroImageUrl && (
+                  <div className="flex justify-center">
+                    <Button variant="outline" onClick={() => setDocumentNonBlocking(doc(firestore, 'settings', 'store'), { heroImageUrl: "" }, { merge: true })}>
+                      <X className="h-4 w-4 mr-2" /> Remove Custom Image
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
