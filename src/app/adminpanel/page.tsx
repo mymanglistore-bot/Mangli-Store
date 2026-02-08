@@ -235,7 +235,7 @@ export default function AdminPage() {
                           </div>
                           <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
                             <Info className="h-3 w-3" />
-                            Recommended: 4:3 Aspect Ratio (e.g. 800x600px). Max 800KB.
+                            Recommended: 4:3 Aspect Ratio (e.g. 400x300px). Max 800KB.
                           </p>
                         </div>
                         <div className="grid w-full items-center gap-1.5">
