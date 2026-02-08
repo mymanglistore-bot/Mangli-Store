@@ -13,7 +13,6 @@ import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useDoc, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking, useAuth, initiateAnonymousSignIn } from '@/firebase';
@@ -40,7 +39,7 @@ export default function AdminPage() {
     return collection(firestore, 'products');
   }, [firestore]);
 
-  const { data: products, isLoading } = useCollection<Product>(productsQuery);
+  const { data: products, isLoading: isProductsLoading } = useCollection<Product>(productsQuery);
 
   const settingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -98,7 +97,10 @@ export default function AdminPage() {
 
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !newProduct.imageUrl) return;
+    if (!firestore || !newProduct.imageUrl) {
+        toast({ variant: "destructive", title: "Missing Information", description: "Please provide all details and an image." });
+        return;
+    }
     const productsRef = collection(firestore, 'products');
     const newDocRef = doc(productsRef);
     const productData: Product = {
@@ -152,39 +154,81 @@ export default function AdminPage() {
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold">Product Catalog</h1>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Add Product</Button></DialogTrigger>
-                <DialogContent>
+                <DialogTrigger asChild>
+                    <Button><Plus className="h-4 w-4 mr-2" /> Add Product</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
                   <form onSubmit={handleAddProduct} className="space-y-4">
-                    <DialogHeader><DialogTitle>New Product</DialogTitle></DialogHeader>
+                    <DialogHeader>
+                        <DialogTitle>New Product</DialogTitle>
+                        <DialogDescription>Enter the details of the new item to add to your catalog.</DialogDescription>
+                    </DialogHeader>
                     <div className="space-y-4">
-                      <div><Label>Name</Label><Input required value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} /></div>
-                      <div><Label>Price</Label><Input type="number" required value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} /></div>
-                      <div><Label>Image</Label>
-                        <div className="mt-2 border-2 border-dashed p-4 rounded-lg flex flex-col items-center justify-center relative">
-                          {newProduct.imageUrl ? <img src={newProduct.imageUrl} className="max-h-32 rounded" /> : <Upload className="h-8 w-8 text-muted-foreground" />}
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="name">Name</Label>
+                        <Input id="name" required value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} />
+                      </div>
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="price">Price (Rs.)</Label>
+                        <Input id="price" type="number" required value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} />
+                      </div>
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label>Image</Label>
+                        <div className="mt-1 border-2 border-dashed p-4 rounded-lg flex flex-col items-center justify-center relative hover:bg-muted/50 transition-colors">
+                          {newProduct.imageUrl ? (
+                              <img src={newProduct.imageUrl} className="max-h-32 rounded shadow-sm" alt="Preview" />
+                          ) : (
+                              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                  <Upload className="h-8 w-8" />
+                                  <span className="text-xs">Click to upload from PC</span>
+                              </div>
+                          )}
                           <Input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleProductFileChange} />
                         </div>
                       </div>
-                      <div><Label>Description</Label><Textarea required value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} /></div>
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="desc">Description</Label>
+                        <Textarea id="desc" required value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} />
+                      </div>
                     </div>
-                    <Button type="submit" className="w-full">Save</Button>
+                    <DialogFooter>
+                        <Button type="submit" className="w-full">Save Product</Button>
+                    </DialogFooter>
                   </form>
                 </DialogContent>
               </Dialog>
             </div>
-            <Card><Table>
-              <TableHeader><TableRow><TableHead>Image</TableHead><TableHead>Name</TableHead><TableHead>Price</TableHead><TableHead>Action</TableHead></TableRow></TableHeader>
-              <TableBody>
-                {products?.map(p => (
-                  <TableRow key={p.id}>
-                    <TableCell><img src={p.imageUrl} className="w-10 h-10 object-cover rounded" /></TableCell>
-                    <TableCell>{p.name}</TableCell>
-                    <TableCell>Rs. {p.price}</TableCell>
-                    <TableCell><Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(firestore, 'products', p.id))}><Trash2 className="h-4 w-4" /></Button></TableCell>
+            
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[80px]">Image</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table></Card>
+                </TableHeader>
+                <TableBody>
+                  {isProductsLoading ? (
+                      <TableRow><TableCell colSpan={4} className="h-24 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+                  ) : products?.length === 0 ? (
+                      <TableRow><TableCell colSpan={4} className="h-24 text-center text-muted-foreground">No products found.</TableCell></TableRow>
+                  ) : products?.map(p => (
+                    <TableRow key={p.id}>
+                      <TableCell><img src={p.imageUrl} className="w-10 h-10 object-cover rounded shadow-sm" alt={p.name} /></TableCell>
+                      <TableCell className="font-medium">{p.name}</TableCell>
+                      <TableCell>Rs. {p.price}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(firestore, 'products', p.id))} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
           </TabsContent>
 
           <TabsContent value="branding">
@@ -194,13 +238,13 @@ export default function AdminPage() {
                 <CardDescription>Upload an image from your PC to display in the home page banner.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="aspect-video w-full max-w-2xl mx-auto rounded-xl border-2 border-dashed flex flex-col items-center justify-center relative overflow-hidden bg-muted">
+                <div className="aspect-video w-full max-w-2xl mx-auto rounded-xl border-2 border-dashed flex flex-col items-center justify-center relative overflow-hidden bg-muted group">
                   {settings?.heroImageUrl ? (
-                    <img src={settings.heroImageUrl} className="w-full h-full object-cover" />
+                    <img src={settings.heroImageUrl} className="w-full h-full object-cover" alt="Hero Banner" />
                   ) : (
                     <ImageIcon className="h-12 w-12 text-muted-foreground" />
                   )}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
                     <div className="text-white flex flex-col items-center gap-2">
                       <Upload className="h-8 w-8" />
                       <span className="font-bold">Change Hero Image</span>
