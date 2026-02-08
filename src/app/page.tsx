@@ -31,13 +31,13 @@ export default function Home() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
-        {/* Hero Section - Image Only */}
+        {/* Hero Section - Image Only with Transparency */}
         <section className="mb-12">
-          <div className="relative w-full overflow-hidden rounded-3xl shadow-sm border bg-muted">
+          <div className="relative w-full overflow-hidden rounded-3xl shadow-sm border bg-transparent">
             <img 
               src={settings?.heroImageUrl || "https://picsum.photos/seed/manglistore/1200/400"} 
               alt="Mangli.Store Banner" 
-              className="w-full h-auto max-h-[500px] object-cover block"
+              className="w-full h-auto max-h-[500px] object-cover block opacity-80"
             />
           </div>
         </section>
