@@ -61,14 +61,14 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-white rounded-2xl border border-dashed">
+            <div className="text-center py-20 bg-transparent rounded-2xl border border-dashed">
               <p className="text-muted-foreground">No products available in the catalog yet.</p>
             </div>
           )}
         </section>
       </main>
 
-      <footer className="bg-white border-t py-12">
+      <footer className="bg-background border-t py-12">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
@@ -76,10 +76,6 @@ export default function Home() {
             </div>
             <span className="font-headline text-xl font-bold text-primary">Mangli.Store</span>
           </div>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Supporting local farmers and reducing waste with every delivery. 
-            Join the green revolution today with Mangli.Store.
-          </p>
           <div className="mt-8 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
             &copy; {new Date().getFullYear()} Mangli.Store Delivery Service
           </div>
