@@ -1,19 +1,22 @@
 
 "use client";
 
+import React, { useState, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { ProductCard } from '@/components/ProductCard';
 import { CartDrawer } from '@/components/CartDrawer';
 import { useCollection, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Product } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Filter } from 'lucide-react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Home() {
   const firestore = useFirestore();
   const logoPlaceholder = PlaceHolderImages.find(img => img.id === 'logo');
+  const [activeCategory, setActiveCategory] = useState("All");
   
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -31,12 +34,25 @@ export default function Home() {
 
   const logoUrl = settings?.logoImageUrl || logoPlaceholder?.imageUrl || "https://picsum.photos/seed/manglistore/100/100";
 
+  // Extract unique categories from products
+  const categories = useMemo(() => {
+    if (!products) return ["All"];
+    const cats = products.map(p => p.category);
+    return ["All", ...Array.from(new Set(cats))];
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    if (activeCategory === "All") return products;
+    return products.filter(p => p.category === activeCategory);
+  }, [products, activeCategory]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
-        {/* Hero Section - Image Only with Transparency and No Border */}
+        {/* Hero Section */}
         <section className="mb-12">
           <div className="relative w-full overflow-hidden rounded-3xl bg-transparent">
             <img 
@@ -49,34 +65,49 @@ export default function Home() {
         </section>
 
         <section id="products">
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <h2 className="text-3xl font-headline font-bold">Our Catalog</h2>
-            </div>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+            <h2 className="text-3xl font-headline font-bold">Our Catalog</h2>
+            
+            {categories.length > 1 && (
+              <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
+                <TabsList className="bg-muted/50 h-12 p-1 overflow-x-auto flex-nowrap justify-start max-w-full">
+                  {categories.map((cat) => (
+                    <TabsTrigger 
+                      key={cat} 
+                      value={cat}
+                      className="px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    >
+                      {cat}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            )}
           </div>
           
           {isLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : products && products.length > 0 ? (
+          ) : filteredProducts && filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-transparent rounded-2xl border border-dashed">
-              <p className="text-muted-foreground">No products available in the catalog yet.</p>
+            <div className="text-center py-20 bg-transparent rounded-2xl border border-dashed flex flex-col items-center justify-center">
+              <Filter className="h-12 w-12 text-muted-foreground/30 mb-4" />
+              <p className="text-muted-foreground">No products found in this category.</p>
             </div>
           )}
         </section>
       </main>
 
-      <footer className="bg-background border-t py-12">
+      <footer className="bg-background border-t py-12 mt-12">
         <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-16 h-10 relative overflow-hidden bg-transparent">
+          <div className="flex flex-col items-center justify-center gap-3 mb-4">
+            <div className="w-24 h-16 relative overflow-hidden bg-transparent">
               <Image
                 src={logoUrl}
                 alt="Mangli.Store Logo"

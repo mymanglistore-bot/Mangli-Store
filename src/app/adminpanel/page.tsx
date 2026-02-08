@@ -3,17 +3,18 @@
 
 import React, { useState } from 'react';
 import { Navbar } from '@/components/Navbar';
-import { ADMIN_PASS } from '@/lib/constants';
+import { ADMIN_PASS, DEFAULT_CATEGORIES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info } from 'lucide-react';
+import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info, Tags } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useDoc, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, useAuth, initiateAnonymousSignIn } from '@/firebase';
@@ -32,10 +33,13 @@ export default function AdminPage() {
     name: "",
     price: "",
     description: "",
-    category: "Groceries",
+    category: "Vegetables",
     imageUrl: "",
     inStock: true
   });
+
+  const [customCategory, setCustomCategory] = useState("");
+  const [useCustomCategory, setUseCustomCategory] = useState(false);
 
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -125,18 +129,23 @@ export default function AdminPage() {
     }
     const productsRef = collection(firestore, 'products');
     const newDocRef = doc(productsRef);
+    
+    const finalCategory = useCustomCategory ? customCategory : newProduct.category;
+
     const productData: Product = {
       id: newDocRef.id,
       name: newProduct.name,
       price: Number(newProduct.price),
       description: newProduct.description,
-      category: newProduct.category,
+      category: finalCategory,
       imageUrl: newProduct.imageUrl,
       inStock: newProduct.inStock
     };
     setDocumentNonBlocking(newDocRef, productData, { merge: true });
     setIsAddDialogOpen(false);
-    setNewProduct({ name: "", price: "", description: "", category: "Groceries", imageUrl: "", inStock: true });
+    setNewProduct({ name: "", price: "", description: "", category: "Vegetables", imageUrl: "", inStock: true });
+    setCustomCategory("");
+    setUseCustomCategory(false);
     toast({ title: "Product Added", description: `${productData.name} is now live.` });
   };
 
@@ -152,16 +161,18 @@ export default function AdminPage() {
 
   const seedDatabase = () => {
     if (!firestore) return;
-    PlaceHolderImages.forEach(img => {
+    PlaceHolderImages.forEach((img, idx) => {
       if (img.id === 'logo') return; 
       const productsRef = collection(firestore, 'products');
       const newDocRef = doc(productsRef);
+      // Randomly assign between Fruits and Vegetables for seeding
+      const cat = idx % 2 === 0 ? "Fruits" : "Vegetables";
       const productData: Product = {
         id: newDocRef.id,
         name: img.description,
         price: Math.floor(Math.random() * 100) + 50,
         description: `Premium quality ${img.description.toLowerCase()} for your kitchen.`,
-        category: "Groceries",
+        category: cat,
         imageUrl: img.imageUrl,
         inStock: true
       };
@@ -239,6 +250,47 @@ export default function AdminPage() {
                           <Label htmlFor="price">Price (Rs.)</Label>
                           <Input id="price" type="number" required value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} />
                         </div>
+
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="category">Category</Label>
+                          {useCustomCategory ? (
+                            <div className="flex gap-2">
+                              <Input 
+                                placeholder="Enter custom category" 
+                                value={customCategory} 
+                                onChange={(e) => setCustomCategory(e.target.value)} 
+                                autoFocus
+                              />
+                              <Button type="button" variant="ghost" size="icon" onClick={() => setUseCustomCategory(false)}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Select 
+                              value={newProduct.category} 
+                              onValueChange={(val) => {
+                                if (val === "custom") {
+                                  setUseCustomCategory(true);
+                                } else {
+                                  setNewProduct({...newProduct, category: val});
+                                }
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select Category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DEFAULT_CATEGORIES.map(cat => (
+                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))}
+                                <SelectItem value="custom" className="text-primary font-bold">
+                                  + Add New Category
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+
                         <div className="grid w-full items-center gap-1.5">
                           <Label>Image</Label>
                           <div className="mt-1 border-2 border-dashed p-4 rounded-lg flex flex-col items-center justify-center relative hover:bg-muted/50 transition-colors">
@@ -281,6 +333,7 @@ export default function AdminPage() {
                   <TableRow>
                     <TableHead className="w-[80px]">Image</TableHead>
                     <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>In Stock</TableHead>
                     <TableHead className="text-right">Action</TableHead>
@@ -288,13 +341,18 @@ export default function AdminPage() {
                 </TableHeader>
                 <TableBody>
                   {isProductsLoading ? (
-                      <TableRow><TableCell colSpan={5} className="h-24 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="h-24 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
                   ) : products?.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="h-24 text-center text-muted-foreground">No products found.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="h-24 text-center text-muted-foreground">No products found.</TableCell></TableRow>
                   ) : products?.map(p => (
                     <TableRow key={p.id}>
                       <TableCell><img src={p.imageUrl} className="w-10 h-10 object-cover rounded shadow-sm" alt={p.name} /></TableCell>
                       <TableCell className="font-medium">{p.name}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/20 rounded-full text-[10px] font-bold">
+                          <Tags className="h-3 w-3" /> {p.category}
+                        </span>
+                      </TableCell>
                       <TableCell>Rs. {p.price}</TableCell>
                       <TableCell>
                         <Switch checked={p.inStock} onCheckedChange={() => toggleStockStatus(p)} />
