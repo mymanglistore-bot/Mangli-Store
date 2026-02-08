@@ -13,7 +13,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function Home() {
   const firestore = useFirestore();
-  const logo = PlaceHolderImages.find(img => img.id === 'logo');
+  const logoPlaceholder = PlaceHolderImages.find(img => img.id === 'logo');
   
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -28,6 +28,8 @@ export default function Home() {
   }, [firestore]);
 
   const { data: settings } = useDoc<any>(settingsRef);
+
+  const logoUrl = settings?.logoImageUrl || logoPlaceholder?.imageUrl || "https://picsum.photos/seed/manglistore/100/100";
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,7 +78,7 @@ export default function Home() {
           <div className="flex items-center justify-center mb-4">
             <div className="w-12 h-12 relative overflow-hidden rounded-full shadow-sm bg-primary/10">
               <Image
-                src={logo?.imageUrl || "https://picsum.photos/seed/manglistore/100/100"}
+                src={logoUrl}
                 alt="Mangli.Store Logo"
                 fill
                 className="object-cover"

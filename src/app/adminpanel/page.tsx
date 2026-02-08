@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -99,6 +100,23 @@ export default function AdminPage() {
     }
   };
 
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && firestore) {
+      if (file.size > 100 * 1024) { 
+        toast({ variant: "destructive", title: "Image too large", description: "Logo limit is 100KB." });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const docRef = doc(firestore, 'settings', 'store');
+        setDocumentNonBlocking(docRef, { logoImageUrl: reader.result as string }, { merge: true });
+        toast({ title: "Logo Updated", description: "The store logo has been changed." });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore || !newProduct.imageUrl) {
@@ -135,6 +153,7 @@ export default function AdminPage() {
   const seedDatabase = () => {
     if (!firestore) return;
     PlaceHolderImages.forEach(img => {
+      if (img.id === 'logo') return; // Skip logo from product seed
       const productsRef = collection(firestore, 'products');
       const newDocRef = doc(productsRef);
       const productData: Product = {
@@ -187,7 +206,7 @@ export default function AdminPage() {
               <Database className="h-4 w-4" /> Inventory
             </TabsTrigger>
             <TabsTrigger value="branding" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" /> Branding & Hero
+              <Settings className="h-4 w-4" /> Branding
             </TabsTrigger>
           </TabsList>
 
@@ -292,7 +311,38 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="branding">
+          <TabsContent value="branding" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Store Logo</CardTitle>
+                <CardDescription>Upload your brand logo (displayed in header and footer).</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-6">
+                  <div className="w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center relative overflow-hidden bg-muted group">
+                    {settings?.logoImageUrl ? (
+                      <img src={settings.logoImageUrl} className="w-full h-full object-cover" alt="Store Logo" />
+                    ) : (
+                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                      <Upload className="h-6 w-6 text-white" />
+                      <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleLogoFileChange} />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Click image to upload</p>
+                    <p className="text-xs text-muted-foreground">Recommended: Square PNG/JPG. Max 100KB.</p>
+                    {settings?.logoImageUrl && (
+                      <Button variant="ghost" size="sm" onClick={() => setDocumentNonBlocking(doc(firestore, 'settings', 'store'), { logoImageUrl: "" }, { merge: true })} className="text-destructive h-8 px-2">
+                        <X className="h-3 w-3 mr-1" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Hero Section Image</CardTitle>

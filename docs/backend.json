@@ -56,6 +56,10 @@
         "heroImageUrl": {
           "type": "string",
           "description": "Base64 or URL of the hero section image."
+        },
+        "logoImageUrl": {
+          "type": "string",
+          "description": "Base64 or URL of the store logo."
         }
       }
     }
@@ -91,7 +95,7 @@
           "schema": {
             "$ref": "#/backend/entities/StoreSettings"
           },
-          "description": "Global store settings like hero images.",
+          "description": "Global store settings like hero images and logos.",
           "params": []
         }
       }

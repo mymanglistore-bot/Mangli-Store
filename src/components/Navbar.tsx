@@ -4,9 +4,20 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export function Navbar() {
-  const logo = PlaceHolderImages.find(img => img.id === 'logo');
+  const firestore = useFirestore();
+  const settingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'store');
+  }, [firestore]);
+
+  const { data: settings } = useDoc<any>(settingsRef);
+  const logoPlaceholder = PlaceHolderImages.find(img => img.id === 'logo');
+
+  const logoUrl = settings?.logoImageUrl || logoPlaceholder?.imageUrl || "https://picsum.photos/seed/manglistore/100/100";
 
   return (
     <header className="sticky top-0 z-40 w-full flex flex-col">
@@ -36,7 +47,7 @@ export function Navbar() {
           <Link href="/" className="flex items-center gap-2 group transition-transform hover:scale-105 active:scale-95">
             <div className="w-12 h-12 relative overflow-hidden rounded-full shadow-md shadow-primary/20 bg-primary/10">
               <Image
-                src={logo?.imageUrl || "https://picsum.photos/seed/manglistore/100/100"}
+                src={logoUrl}
                 alt="Mangli.Store Logo"
                 fill
                 className="object-cover"
