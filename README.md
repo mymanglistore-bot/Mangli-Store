@@ -21,7 +21,7 @@ This command will automatically:
 ## 🛠 Features
 
 - **Product Catalog**: Real-time listing from Firestore.
-- **Admin Dashboard**: Manage inventory at `/Adminpanel` (hidden from public).
+- **Admin Dashboard**: Manage inventory at `/adminpanel` (hidden from public).
 - **WhatsApp Checkout**: Orders sent to WhatsApp to avoid processing fees.
 - **Static Export**: Optimized for 100% free hosting.
 
