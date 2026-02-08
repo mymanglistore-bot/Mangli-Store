@@ -153,7 +153,7 @@ export default function AdminPage() {
   const seedDatabase = () => {
     if (!firestore) return;
     PlaceHolderImages.forEach(img => {
-      if (img.id === 'logo') return; // Skip logo from product seed
+      if (img.id === 'logo') return; 
       const productsRef = collection(firestore, 'products');
       const newDocRef = doc(productsRef);
       const productData: Product = {
@@ -332,7 +332,7 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Click image to upload</p>
-                    <p className="text-xs text-muted-foreground">Recommended: 200x125px PNG/JPG with transparent background. Max 100KB.</p>
+                    <p className="text-xs text-muted-foreground">Recommended: 400x250px PNG/JPG with transparent background. Max 100KB.</p>
                     {settings?.logoImageUrl && (
                       <Button variant="ghost" size="sm" onClick={() => setDocumentNonBlocking(doc(firestore, 'settings', 'store'), { logoImageUrl: "" }, { merge: true })} className="text-destructive h-8 px-2">
                         <X className="h-3 w-3 mr-1" /> Remove
