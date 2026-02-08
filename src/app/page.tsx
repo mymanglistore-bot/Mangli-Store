@@ -47,7 +47,6 @@ export default function Home() {
           <div className="flex justify-between items-end mb-8">
             <div>
               <h2 className="text-3xl font-headline font-bold">Our Catalog</h2>
-              <p className="text-muted-foreground">Handpicked fresh items for you</p>
             </div>
           </div>
           
