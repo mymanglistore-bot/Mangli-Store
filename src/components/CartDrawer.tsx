@@ -11,20 +11,23 @@ import {
   SheetFooter
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Minus, Plus, Trash2, MapPin } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Trash2, MapPin, AlertCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { MAX_ORDER_LIMIT, WHATSAPP_NUMBER } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function CartDrawer() {
   const { cart, totals, updateQuantity, removeFromCart, clearCart } = useCart();
   const { toast } = useToast();
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
+  const isOverLimit = totals.grandTotal > MAX_ORDER_LIMIT;
+
   const handleCheckout = () => {
-    if (totals.grandTotal > MAX_ORDER_LIMIT) {
+    if (isOverLimit) {
       toast({
         variant: "destructive",
         title: "Order Limit Exceeded",
@@ -125,22 +128,34 @@ export function CartDrawer() {
                   {totals.deliveryCharge === 0 ? "FREE" : `Rs. ${totals.deliveryCharge}`}
                 </span>
               </div>
+              
               {totals.subtotal < 300 && totals.subtotal > 0 && (
                 <p className="text-[10px] text-muted-foreground italic text-center">
                   Add Rs. {300 - totals.subtotal} more for FREE delivery!
                 </p>
               )}
+
               <Separator />
               <div className="flex justify-between font-bold text-lg pt-2">
                 <span>Total</span>
-                <span>Rs. {totals.grandTotal}</span>
+                <span className={isOverLimit ? "text-destructive" : ""}>Rs. {totals.grandTotal}</span>
               </div>
             </div>
+
+            {isOverLimit && (
+              <Alert variant="destructive" className="py-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle className="text-xs font-bold">Limit Exceeded</AlertTitle>
+                <AlertDescription className="text-[10px]">
+                  Maximum order limit is Rs. {MAX_ORDER_LIMIT}. Please remove some items to proceed.
+                </AlertDescription>
+              </Alert>
+            )}
             
             <Button 
               className="w-full h-12 text-lg font-bold"
               onClick={handleCheckout}
-              disabled={totals.grandTotal > MAX_ORDER_LIMIT}
+              disabled={isOverLimit}
             >
               Order via WhatsApp
             </Button>
