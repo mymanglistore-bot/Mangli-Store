@@ -31,6 +31,10 @@
         "category": {
           "type": "string",
           "description": "Category of the product (e.g., fruits, vegetables, dairy)."
+        },
+        "inStock": {
+          "type": "boolean",
+          "description": "Whether the product is currently available for purchase."
         }
       },
       "required": [
@@ -39,7 +43,8 @@
         "description",
         "price",
         "imageUrl",
-        "category"
+        "category",
+        "inStock"
       ]
     },
     "StoreSettings": {

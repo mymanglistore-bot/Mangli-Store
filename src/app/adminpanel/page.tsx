@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -12,9 +13,10 @@ import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection, useDoc, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking, useAuth, initiateAnonymousSignIn } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, useAuth, initiateAnonymousSignIn } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -31,7 +33,8 @@ export default function AdminPage() {
     price: "",
     description: "",
     category: "Groceries",
-    imageUrl: ""
+    imageUrl: "",
+    inStock: true
   });
 
   const productsQuery = useMemoFirebase(() => {
@@ -111,12 +114,23 @@ export default function AdminPage() {
       price: Number(newProduct.price),
       description: newProduct.description,
       category: newProduct.category,
-      imageUrl: newProduct.imageUrl
+      imageUrl: newProduct.imageUrl,
+      inStock: newProduct.inStock
     };
     setDocumentNonBlocking(newDocRef, productData, { merge: true });
     setIsAddDialogOpen(false);
-    setNewProduct({ name: "", price: "", description: "", category: "Groceries", imageUrl: "" });
+    setNewProduct({ name: "", price: "", description: "", category: "Groceries", imageUrl: "", inStock: true });
     toast({ title: "Product Added", description: `${productData.name} is now live.` });
+  };
+
+  const toggleStockStatus = (product: Product) => {
+    if (!firestore) return;
+    const docRef = doc(firestore, 'products', product.id);
+    updateDocumentNonBlocking(docRef, { inStock: !product.inStock });
+    toast({ 
+      title: "Stock Updated", 
+      description: `${product.name} is now ${!product.inStock ? 'In Stock' : 'Out of Stock'}.` 
+    });
   };
 
   const seedDatabase = () => {
@@ -130,7 +144,8 @@ export default function AdminPage() {
         price: Math.floor(Math.random() * 100) + 50,
         description: `Premium quality ${img.description.toLowerCase()} for your kitchen.`,
         category: "Groceries",
-        imageUrl: img.imageUrl
+        imageUrl: img.imageUrl,
+        inStock: true
       };
       setDocumentNonBlocking(newDocRef, productData, { merge: true });
     });
@@ -224,6 +239,10 @@ export default function AdminPage() {
                           <Label htmlFor="desc">Description</Label>
                           <Textarea id="desc" required value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} />
                         </div>
+                        <div className="flex items-center justify-between py-2">
+                          <Label htmlFor="stock-new">In Stock Initially?</Label>
+                          <Switch id="stock-new" checked={newProduct.inStock} onCheckedChange={(val) => setNewProduct({...newProduct, inStock: val})} />
+                        </div>
                       </div>
                       <DialogFooter>
                           <Button type="submit" className="w-full">Save Product</Button>
@@ -241,19 +260,23 @@ export default function AdminPage() {
                     <TableHead className="w-[80px]">Image</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Price</TableHead>
+                    <TableHead>In Stock</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isProductsLoading ? (
-                      <TableRow><TableCell colSpan={4} className="h-24 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="h-24 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
                   ) : products?.length === 0 ? (
-                      <TableRow><TableCell colSpan={4} className="h-24 text-center text-muted-foreground">No products found.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="h-24 text-center text-muted-foreground">No products found.</TableCell></TableRow>
                   ) : products?.map(p => (
                     <TableRow key={p.id}>
                       <TableCell><img src={p.imageUrl} className="w-10 h-10 object-cover rounded shadow-sm" alt={p.name} /></TableCell>
                       <TableCell className="font-medium">{p.name}</TableCell>
                       <TableCell>Rs. {p.price}</TableCell>
+                      <TableCell>
+                        <Switch checked={p.inStock} onCheckedChange={() => toggleStockStatus(p)} />
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(firestore, 'products', p.id))} className="text-destructive hover:text-destructive hover:bg-destructive/10">
                           <Trash2 className="h-4 w-4" />
