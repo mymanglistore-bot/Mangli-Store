@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -29,7 +28,7 @@ export function ProductCard({ product }: { product: Product }) {
         )}
       </div>
       <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-1">
+        <div className="flex flex-col mb-2">
           <h3 className="font-headline font-semibold text-lg line-clamp-1">{product.name}</h3>
           <span className="text-primary font-bold">Rs. {product.price}</span>
         </div>
