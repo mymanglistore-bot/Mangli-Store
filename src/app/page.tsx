@@ -120,7 +120,13 @@ export default function Home() {
               Mangli.Store
             </span>
           </div>
-          <div className="mt-8 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+          
+          <div className="mt-8 space-y-1 text-xs text-muted-foreground max-w-md mx-auto">
+            <p>Delivery: Orders accepted 6 AM–8 PM; late orders delivered next morning.</p>
+            <p>Images: For illustration only; actual product may vary.</p>
+          </div>
+
+          <div className="mt-6 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
             &copy; {new Date().getFullYear()} Mangli.Store Delivery Service
           </div>
         </div>
