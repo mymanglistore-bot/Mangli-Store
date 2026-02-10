@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info, Tags } from 'lucide-react';
+import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info, Tags, Edit2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -25,6 +24,7 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
   const auth = useAuth();
@@ -37,6 +37,8 @@ export default function AdminPage() {
     imageUrl: "",
     inStock: true
   });
+
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const [customCategory, setCustomCategory] = useState("");
   const [useCustomCategory, setUseCustomCategory] = useState(false);
@@ -74,7 +76,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleProductFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProductFileChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024) { 
@@ -82,7 +84,13 @@ export default function AdminPage() {
         return;
       }
       const reader = new FileReader();
-      reader.onloadend = () => setNewProduct({ ...newProduct, imageUrl: reader.result as string });
+      reader.onloadend = () => {
+        if (isEdit && editingProduct) {
+          setEditingProduct({ ...editingProduct, imageUrl: reader.result as string });
+        } else {
+          setNewProduct({ ...newProduct, imageUrl: reader.result as string });
+        }
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -149,6 +157,36 @@ export default function AdminPage() {
     toast({ title: "Product Added", description: `${productData.name} is now live.` });
   };
 
+  const handleEditProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!firestore || !editingProduct) return;
+
+    const docRef = doc(firestore, 'products', editingProduct.id);
+    const finalCategory = useCustomCategory ? customCategory : editingProduct.category;
+
+    const updateData = {
+      ...editingProduct,
+      price: Number(editingProduct.price),
+      category: finalCategory
+    };
+
+    updateDocumentNonBlocking(docRef, updateData);
+    setIsEditDialogOpen(false);
+    setEditingProduct(null);
+    setCustomCategory("");
+    setUseCustomCategory(false);
+    toast({ title: "Product Updated", description: `${updateData.name} has been updated.` });
+  };
+
+  const openEditDialog = (product: Product) => {
+    setEditingProduct(product);
+    setUseCustomCategory(!DEFAULT_CATEGORIES.includes(product.category));
+    if (!DEFAULT_CATEGORIES.includes(product.category)) {
+      setCustomCategory(product.category);
+    }
+    setIsEditDialogOpen(true);
+  };
+
   const toggleStockStatus = (product: Product) => {
     if (!firestore) return;
     const docRef = doc(firestore, 'products', product.id);
@@ -165,7 +203,6 @@ export default function AdminPage() {
       if (img.id === 'logo') return; 
       const productsRef = collection(firestore, 'products');
       const newDocRef = doc(productsRef);
-      // Randomly assign between Fruits and Vegetables for seeding
       const cat = idx % 2 === 0 ? "Fruits" : "Vegetables";
       const productData: Product = {
         id: newDocRef.id,
@@ -302,7 +339,7 @@ export default function AdminPage() {
                                     <span className="text-xs">Click to upload from PC</span>
                                 </div>
                             )}
-                            <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleProductFileChange} />
+                            <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleProductFileChange(e, false)} />
                           </div>
                           <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
                             <Info className="h-3 w-3" />
@@ -336,7 +373,7 @@ export default function AdminPage() {
                     <TableHead>Category</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>In Stock</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -358,15 +395,113 @@ export default function AdminPage() {
                         <Switch checked={p.inStock} onCheckedChange={() => toggleStockStatus(p)} />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(firestore, 'products', p.id))} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)} className="text-primary hover:text-primary hover:bg-primary/10">
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(firestore, 'products', p.id))} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </Card>
+
+            {/* Edit Product Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                {editingProduct && (
+                  <form onSubmit={handleEditProduct} className="space-y-4">
+                    <DialogHeader>
+                        <DialogTitle>Edit Product</DialogTitle>
+                        <DialogDescription>Modify the details of your product.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="edit-name">Name</Label>
+                        <Input id="edit-name" required value={editingProduct.name} onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})} />
+                      </div>
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="edit-price">Price (Rs.)</Label>
+                        <Input id="edit-price" type="number" required value={editingProduct.price} onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})} />
+                      </div>
+
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="edit-category">Category</Label>
+                        {useCustomCategory ? (
+                          <div className="flex gap-2">
+                            <Input 
+                              placeholder="Enter custom category" 
+                              value={customCategory} 
+                              onChange={(e) => setCustomCategory(e.target.value)} 
+                              autoFocus
+                            />
+                            <Button type="button" variant="ghost" size="icon" onClick={() => {
+                              setUseCustomCategory(false);
+                              setEditingProduct({...editingProduct, category: DEFAULT_CATEGORIES[0]});
+                            }}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Select 
+                            value={editingProduct.category} 
+                            onValueChange={(val) => {
+                              if (val === "custom") {
+                                setUseCustomCategory(true);
+                              } else {
+                                setEditingProduct({...editingProduct, category: val});
+                              }
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {DEFAULT_CATEGORIES.map(cat => (
+                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              ))}
+                              <SelectItem value="custom" className="text-primary font-bold">
+                                + Add New Category
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label>Image</Label>
+                        <div className="mt-1 border-2 border-dashed p-4 rounded-lg flex flex-col items-center justify-center relative hover:bg-muted/50 transition-colors">
+                          <img src={editingProduct.imageUrl} className="max-h-32 rounded shadow-sm" alt="Preview" />
+                          <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+                            <Upload className="h-6 w-6 text-white" />
+                          </div>
+                          <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleProductFileChange(e, true)} />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
+                          <Info className="h-3 w-3" />
+                          Recommended: 200x150px. Max 50KB.
+                        </p>
+                      </div>
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="edit-desc">Description</Label>
+                        <Textarea id="edit-desc" required value={editingProduct.description} onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})} />
+                      </div>
+                      <div className="flex items-center justify-between py-2">
+                        <Label htmlFor="edit-stock">In Stock?</Label>
+                        <Switch id="edit-stock" checked={editingProduct.inStock} onCheckedChange={(val) => setEditingProduct({...editingProduct, inStock: val})} />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit" className="w-full">Save Changes</Button>
+                    </DialogFooter>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           <TabsContent value="branding" className="space-y-6">
