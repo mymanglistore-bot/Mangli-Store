@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -11,7 +11,7 @@ import {
   SheetFooter
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Minus, Plus, Trash2, MapPin, AlertCircle } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Trash2, MapPin, AlertCircle, Clock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -23,8 +23,26 @@ export function CartDrawer() {
   const { cart, totals, updateQuantity, removeFromCart, clearCart } = useCart();
   const { toast } = useToast();
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const [isAfterHours, setIsAfterHours] = useState(false);
 
   const isOverLimit = totals.grandTotal > MAX_ORDER_LIMIT;
+
+  useEffect(() => {
+    const checkTime = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      // Logic: After 8 PM (20) or before 6 AM (6) is considered after-hours
+      if (hour >= 20 || hour < 6) {
+        setIsAfterHours(true);
+      } else {
+        setIsAfterHours(false);
+      }
+    };
+
+    checkTime();
+    const interval = setInterval(checkTime, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, []);
 
   const handleCheckout = () => {
     if (isOverLimit) {
@@ -37,6 +55,9 @@ export function CartDrawer() {
     }
 
     let message = `*New Order Details* \n--------------------------\n`;
+    if (isAfterHours) {
+      message += `⚠️ _Note: Order placed after 8 PM. Delivery expected tomorrow morning._\n\n`;
+    }
     cart.forEach(item => {
       message += `• ${item.name} x ${item.quantity} = Rs. ${item.price * item.quantity}\n`;
     });
@@ -141,6 +162,16 @@ export function CartDrawer() {
                 <span className={isOverLimit ? "text-destructive" : ""}>Rs. {totals.grandTotal}</span>
               </div>
             </div>
+
+            {isAfterHours && (
+              <Alert className="bg-primary/5 border-primary/20 py-2">
+                <Clock className="h-4 w-4 text-primary" />
+                <AlertTitle className="text-xs font-bold">Night Delivery Notice</AlertTitle>
+                <AlertDescription className="text-[10px]">
+                  Order timings are 6AM to 8AM. Your order will deliver tomorrow morning.
+                </AlertDescription>
+              </Alert>
+            )}
 
             {isOverLimit && (
               <Alert variant="destructive" className="py-2">
