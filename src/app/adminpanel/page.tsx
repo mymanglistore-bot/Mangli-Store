@@ -551,7 +551,7 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Click image to upload</p>
-                    <p className="text-xs text-muted-foreground">Recommended: 400x250px PNG/JPG with transparent background. Max 100KB.</p>
+                    <p className="text-xs text-muted-foreground">Recommended: 400x250px PNG/JPG. Max 100KB.</p>
                     {settings?.logoImageUrl && (
                       <Button variant="ghost" size="sm" onClick={() => setDocumentNonBlocking(doc(firestore, 'settings', 'store'), { logoImageUrl: "" }, { merge: true })} className="text-destructive h-8 px-2">
                         <X className="h-3 w-3 mr-1" /> Remove
@@ -568,7 +568,7 @@ export default function AdminPage() {
                 <CardDescription>Upload an image from your PC to display in the home page banner.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="aspect-video w-full max-w-2xl mx-auto rounded-xl border-2 border-dashed flex flex-col items-center justify-center relative overflow-hidden bg-muted group">
+                <div className="aspect-[3/1] w-full max-w-2xl mx-auto rounded-xl border-2 border-dashed flex flex-col items-center justify-center relative overflow-hidden bg-muted group">
                   {settings?.heroImageUrl ? (
                     <img src={settings.heroImageUrl} className="w-full h-full object-cover" alt="Hero Banner" />
                   ) : (
@@ -585,7 +585,7 @@ export default function AdminPage() {
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
                     <Info className="h-3 w-3" />
-                    Recommended: Wide banner (e.g. 1200x400px). Max 1MB.
+                    Recommended: 1200x400px Wide Banner. Max 1MB.
                   </p>
                 </div>
                 {settings?.heroImageUrl && (
