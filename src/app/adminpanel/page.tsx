@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -585,7 +584,7 @@ export default function AdminPage() {
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
                     <Info className="h-3 w-3" />
-                    Recommended: 1200x400px Wide Banner. Max 1MB.
+                    Recommended: 600x200px Wide Banner. Max 1MB.
                   </p>
                 </div>
                 {settings?.heroImageUrl && (

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -56,7 +55,7 @@ export default function Home() {
         <section className="mb-12">
           <div className="relative w-full overflow-hidden rounded-3xl bg-transparent">
             <img 
-              src={settings?.heroImageUrl || "https://picsum.photos/seed/manglistore/1200/400"} 
+              src={settings?.heroImageUrl || "https://picsum.photos/seed/manglistore/600/200"} 
               alt="Mangli.Store Banner" 
               className="w-full h-auto max-h-[500px] object-cover block opacity-80"
               data-ai-hint="grocery store banner"
