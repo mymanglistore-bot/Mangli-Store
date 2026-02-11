@@ -59,7 +59,7 @@ export function CartDrawer() {
       message += `⚠️ _Note: Order placed after 8 PM. Delivery expected tomorrow morning._\n\n`;
     }
     cart.forEach(item => {
-      message += `• ${item.name} x ${item.quantity} = Rs. ${item.price * item.quantity}\n`;
+      message += `• ${item.name} x ${item.quantity} ${item.unit || 'Unit'} = Rs. ${item.price * item.quantity}\n`;
     });
     message += `\n--------------------------\n`;
     message += `*Subtotal:* Rs. ${totals.subtotal}\n`;
@@ -103,7 +103,7 @@ export function CartDrawer() {
                 <div key={item.id} className="flex gap-4">
                   <div className="flex-grow">
                     <h4 className="font-bold text-sm">{item.name}</h4>
-                    <p className="text-xs text-muted-foreground mb-2">Rs. {item.price} per unit</p>
+                    <p className="text-xs text-muted-foreground mb-2">Rs. {item.price} per {item.unit || 'Unit'}</p>
                     <div className="flex items-center gap-3">
                       <button 
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}

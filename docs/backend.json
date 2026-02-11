@@ -23,6 +23,10 @@
           "type": "number",
           "description": "Price of the product."
         },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measurement (e.g., Kg, g, Unit, Bunch)."
+        },
         "imageUrl": {
           "type": "string",
           "description": "URL of the product image.",
@@ -42,6 +46,7 @@
         "name",
         "description",
         "price",
+        "unit",
         "imageUrl",
         "category",
         "inStock"

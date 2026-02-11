@@ -21,6 +21,8 @@ import { useFirestore, useCollection, useDoc, useMemoFirebase, deleteDocumentNon
 import { collection, doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
+const PRODUCT_UNITS = ["Kg", "g", "Unit", "Bunch", "Packet", "Ltr", "ml", "Dozen"];
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
@@ -36,6 +38,7 @@ export default function AdminPage() {
     price: "",
     description: "",
     category: "",
+    unit: "Unit",
     imageUrl: "",
     inStock: true
   });
@@ -148,12 +151,13 @@ export default function AdminPage() {
       price: Number(newProduct.price),
       description: newProduct.description,
       category: newProduct.category,
+      unit: newProduct.unit,
       imageUrl: newProduct.imageUrl,
       inStock: newProduct.inStock
     };
     setDocumentNonBlocking(newDocRef, productData, { merge: true });
     setIsAddDialogOpen(false);
-    setNewProduct({ name: "", price: "", description: "", category: "", imageUrl: "", inStock: true });
+    setNewProduct({ name: "", price: "", description: "", category: "", unit: "Unit", imageUrl: "", inStock: true });
     toast({ title: "Product Added", description: `${productData.name} is now live.` });
   };
 
@@ -286,9 +290,28 @@ export default function AdminPage() {
                           <Label htmlFor="name">Name</Label>
                           <Input id="name" required value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} />
                         </div>
-                        <div className="grid w-full items-center gap-1.5">
-                          <Label htmlFor="price">Price (Rs.)</Label>
-                          <Input id="price" type="number" required value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} />
+                        <div className="flex gap-4">
+                          <div className="grid w-full items-center gap-1.5">
+                            <Label htmlFor="price">Price (Rs.)</Label>
+                            <Input id="price" type="number" required value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} />
+                          </div>
+                          <div className="grid w-full items-center gap-1.5">
+                            <Label htmlFor="unit">Unit</Label>
+                            <Select 
+                              value={newProduct.unit} 
+                              onValueChange={(val) => setNewProduct({...newProduct, unit: val})}
+                              required
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Unit" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {PRODUCT_UNITS.map((u) => (
+                                  <SelectItem key={u} value={u}>{u}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
 
                         <div className="grid w-full items-center gap-1.5">
@@ -372,7 +395,7 @@ export default function AdminPage() {
                           <Tags className="h-3 w-3" /> {p.category}
                         </span>
                       </TableCell>
-                      <TableCell>Rs. {p.price}</TableCell>
+                      <TableCell>Rs. {p.price} / {p.unit || 'Unit'}</TableCell>
                       <TableCell>
                         <Switch checked={p.inStock} onCheckedChange={() => toggleStockStatus(p)} />
                       </TableCell>
@@ -405,9 +428,27 @@ export default function AdminPage() {
                         <Label htmlFor="edit-name">Name</Label>
                         <Input id="edit-name" required value={editingProduct.name} onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})} />
                       </div>
-                      <div className="grid w-full items-center gap-1.5">
-                        <Label htmlFor="edit-price">Price (Rs.)</Label>
-                        <Input id="edit-price" type="number" required value={editingProduct.price} onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})} />
+                      <div className="flex gap-4">
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="edit-price">Price (Rs.)</Label>
+                          <Input id="edit-price" type="number" required value={editingProduct.price} onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})} />
+                        </div>
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="edit-unit">Unit</Label>
+                          <Select 
+                            value={editingProduct.unit || "Unit"} 
+                            onValueChange={(val) => setEditingProduct({...editingProduct, unit: val})}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Unit" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PRODUCT_UNITS.map((u) => (
+                                <SelectItem key={u} value={u}>{u}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
                       <div className="grid w-full items-center gap-1.5">

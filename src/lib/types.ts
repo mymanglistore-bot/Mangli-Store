@@ -7,6 +7,7 @@ export interface Product {
   imageUrl: string;
   category: string;
   inStock: boolean;
+  unit: string;
 }
 
 export interface CartItem extends Product {
