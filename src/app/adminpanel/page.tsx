@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info, Tags, Edit2, LayoutGrid } from 'lucide-react';
+import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info, Tags, Edit2, LayoutGrid, TicketPercent } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -32,11 +33,13 @@ export default function AdminPage() {
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
+    originalPrice: "",
     description: "",
     category: "",
     unit: "Unit",
     imageUrl: "",
-    inStock: true
+    inStock: true,
+    isDiscounted: false
   });
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -58,6 +61,8 @@ export default function AdminPage() {
   const { data: settings } = useDoc<any>(settingsRef);
 
   const activeCategories = settings?.categories || DEFAULT_CATEGORIES;
+
+  const discountedProducts = products?.filter(p => p.isDiscounted) || [];
 
   const handleLogin = () => {
     if (password.trim() === ADMIN_PASS) {
@@ -144,15 +149,17 @@ export default function AdminPage() {
       id: newDocRef.id,
       name: newProduct.name,
       price: Number(newProduct.price),
+      originalPrice: newProduct.originalPrice ? Number(newProduct.originalPrice) : undefined,
       description: newProduct.description,
       category: newProduct.category,
       unit: newProduct.unit || "Unit",
       imageUrl: newProduct.imageUrl,
-      inStock: newProduct.inStock
+      inStock: newProduct.inStock,
+      isDiscounted: newProduct.isDiscounted
     };
     setDocumentNonBlocking(newDocRef, productData, { merge: true });
     setIsAddDialogOpen(false);
-    setNewProduct({ name: "", price: "", description: "", category: "", unit: "Unit", imageUrl: "", inStock: true });
+    setNewProduct({ name: "", price: "", originalPrice: "", description: "", category: "", unit: "Unit", imageUrl: "", inStock: true, isDiscounted: false });
     toast({ title: "Product Added", description: `${productData.name} is now live.` });
   };
 
@@ -163,7 +170,8 @@ export default function AdminPage() {
     const docRef = doc(firestore, 'products', editingProduct.id);
     const updateData = {
       ...editingProduct,
-      price: Number(editingProduct.price)
+      price: Number(editingProduct.price),
+      originalPrice: editingProduct.originalPrice ? Number(editingProduct.originalPrice) : undefined
     };
 
     updateDocumentNonBlocking(docRef, updateData);
@@ -255,6 +263,9 @@ export default function AdminPage() {
             <TabsTrigger value="inventory" className="flex items-center gap-2">
               <Database className="h-4 w-4" /> Inventory
             </TabsTrigger>
+            <TabsTrigger value="discounts" className="flex items-center gap-2">
+              <TicketPercent className="h-4 w-4" /> Discount Corner
+            </TabsTrigger>
             <TabsTrigger value="categories" className="flex items-center gap-2">
               <LayoutGrid className="h-4 w-4" /> Categories
             </TabsTrigger>
@@ -312,7 +323,6 @@ export default function AdminPage() {
                               ))}
                             </SelectContent>
                           </Select>
-                          <p className="text-[10px] text-muted-foreground mt-1">Manage these in the "Categories" tab.</p>
                         </div>
 
                         <div className="grid w-full items-center gap-1.5">
@@ -328,18 +338,31 @@ export default function AdminPage() {
                             )}
                             <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleProductFileChange(e, false)} />
                           </div>
-                          <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                            <Info className="h-3 w-3" />
-                            Recommended: 200x150px. Max 50KB.
-                          </p>
                         </div>
+
                         <div className="grid w-full items-center gap-1.5">
                           <Label htmlFor="desc">Description</Label>
                           <Textarea id="desc" required value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} />
                         </div>
-                        <div className="flex items-center justify-between py-2">
-                          <Label htmlFor="stock-new">In Stock Initially?</Label>
-                          <Switch id="stock-new" checked={newProduct.inStock} onCheckedChange={(val) => setNewProduct({...newProduct, inStock: val})} />
+
+                        <div className="flex flex-col gap-4 pt-2 border-t">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="stock-new">In Stock Initially?</Label>
+                            <Switch id="stock-new" checked={newProduct.inStock} onCheckedChange={(val) => setNewProduct({...newProduct, inStock: val})} />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <Label htmlFor="discount-new">Discount Deal?</Label>
+                              <span className="text-[10px] text-muted-foreground">Show in Discount Corner</span>
+                            </div>
+                            <Switch id="discount-new" checked={newProduct.isDiscounted} onCheckedChange={(val) => setNewProduct({...newProduct, isDiscounted: val})} />
+                          </div>
+                          {newProduct.isDiscounted && (
+                            <div className="grid w-full items-center gap-1.5 animate-in slide-in-from-top-1">
+                              <Label htmlFor="original-price-new">Original Price (Before Discount)</Label>
+                              <Input id="original-price-new" type="number" placeholder="e.g. 150" value={newProduct.originalPrice} onChange={(e) => setNewProduct({...newProduct, originalPrice: e.target.value})} />
+                            </div>
+                          )}
                         </div>
                       </div>
                       <DialogFooter>
@@ -371,13 +394,25 @@ export default function AdminPage() {
                   ) : products?.map(p => (
                     <TableRow key={p.id}>
                       <TableCell><img src={p.imageUrl} className="w-10 h-10 object-cover rounded shadow-sm" alt={p.name} /></TableCell>
-                      <TableCell className="font-medium">{p.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {p.name}
+                        {p.isDiscounted && (
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[8px] font-bold bg-primary/10 text-primary uppercase">
+                            Discount
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/20 rounded-full text-[10px] font-bold">
                           <Tags className="h-3 w-3" /> {p.category}
                         </span>
                       </TableCell>
-                      <TableCell>Rs. {p.price} / {p.unit || 'Unit'}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>Rs. {p.price}</span>
+                          {p.originalPrice && <span className="text-[10px] text-muted-foreground line-through">Rs. {p.originalPrice}</span>}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Switch checked={p.inStock} onCheckedChange={() => toggleStockStatus(p)} />
                       </TableCell>
@@ -396,78 +431,60 @@ export default function AdminPage() {
                 </TableBody>
               </Table>
             </Card>
+          </TabsContent>
 
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-              <DialogContent className="sm:max-w-[425px]">
-                {editingProduct && (
-                  <form onSubmit={handleEditProduct} className="space-y-4">
-                    <DialogHeader>
-                        <DialogTitle>Edit Product</DialogTitle>
-                        <DialogDescription>Modify the details of your product.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="grid w-full items-center gap-1.5">
-                        <Label htmlFor="edit-name">Name</Label>
-                        <Input id="edit-name" required value={editingProduct.name} onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})} />
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="grid w-full items-center gap-1.5">
-                          <Label htmlFor="edit-price">Price (Rs.)</Label>
-                          <Input id="edit-price" type="number" required value={editingProduct.price} onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})} />
-                        </div>
-                        <div className="grid w-full items-center gap-1.5">
-                          <Label htmlFor="edit-unit">Unit (e.g. Kg, g, Unit)</Label>
-                          <Input id="edit-unit" required value={editingProduct.unit} onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})} placeholder="Kg, g, Unit, etc." />
-                        </div>
-                      </div>
-
-                      <div className="grid w-full items-center gap-1.5">
-                        <Label htmlFor="edit-category">Category</Label>
-                        <Select 
-                          value={editingProduct.category} 
-                          onValueChange={(val) => setEditingProduct({...editingProduct, category: val})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {activeCategories.map((cat: string) => (
-                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="grid w-full items-center gap-1.5">
-                        <Label>Image</Label>
-                        <div className="mt-1 border-2 border-dashed p-4 rounded-lg flex flex-col items-center justify-center relative hover:bg-muted/50 transition-colors">
-                          <img src={editingProduct.imageUrl} className="max-h-32 rounded shadow-sm" alt="Preview" />
-                          <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
-                            <Upload className="h-6 w-6 text-white" />
-                          </div>
-                          <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleProductFileChange(e, true)} />
-                        </div>
-                        <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                          <Info className="h-3 w-3" />
-                          Recommended: 200x150px. Max 50KB.
-                        </p>
-                      </div>
-                      <div className="grid w-full items-center gap-1.5">
-                        <Label htmlFor="edit-desc">Description</Label>
-                        <Textarea id="edit-desc" required value={editingProduct.description} onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})} />
-                      </div>
-                      <div className="flex items-center justify-between py-2">
-                        <Label htmlFor="edit-stock">In Stock?</Label>
-                        <Switch id="edit-stock" checked={editingProduct.inStock} onCheckedChange={(val) => setEditingProduct({...editingProduct, inStock: val})} />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                        <Button type="submit" className="w-full">Save Changes</Button>
-                    </DialogFooter>
-                  </form>
-                )}
-              </DialogContent>
-            </Dialog>
+          <TabsContent value="discounts">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold">Discount Corner Management</h1>
+              <p className="text-sm text-muted-foreground">Products listed here will appear in the special section on the home page.</p>
+            </div>
+            
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[80px]">Image</TableHead>
+                    <TableHead>Product Name</TableHead>
+                    <TableHead>Selling Price</TableHead>
+                    <TableHead>Original Price</TableHead>
+                    <TableHead>Savings</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isProductsLoading ? (
+                      <TableRow><TableCell colSpan={6} className="h-24 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+                  ) : discountedProducts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-48 text-center flex flex-col items-center justify-center text-muted-foreground">
+                          <TicketPercent className="h-12 w-12 opacity-20 mb-2" />
+                          <p>No discounted products found.</p>
+                          <p className="text-xs">Edit a product and toggle "Discount Deal" to add it here.</p>
+                        </TableCell>
+                      </TableRow>
+                  ) : discountedProducts.map(p => (
+                    <TableRow key={p.id}>
+                      <TableCell><img src={p.imageUrl} className="w-10 h-10 object-cover rounded shadow-sm" alt={p.name} /></TableCell>
+                      <TableCell className="font-medium">{p.name}</TableCell>
+                      <TableCell className="text-primary font-bold">Rs. {p.price}</TableCell>
+                      <TableCell className="text-muted-foreground line-through">Rs. {p.originalPrice || '-'}</TableCell>
+                      <TableCell>
+                        {p.originalPrice ? (
+                          <span className="text-green-600 font-bold">
+                            Rs. {p.originalPrice - p.price} OFF
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(p)}>
+                          Edit Deal
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
           </TabsContent>
 
           <TabsContent value="categories">
@@ -551,11 +568,6 @@ export default function AdminPage() {
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Click image to upload</p>
                     <p className="text-xs text-muted-foreground">Recommended: 400x250px PNG/JPG. Max 100KB.</p>
-                    {settings?.logoImageUrl && (
-                      <Button variant="ghost" size="sm" onClick={() => setDocumentNonBlocking(doc(firestore, 'settings', 'store'), { logoImageUrl: "" }, { merge: true })} className="text-destructive h-8 px-2">
-                        <X className="h-3 w-3 mr-1" /> Remove
-                      </Button>
-                    )}
                   </div>
                 </div>
               </CardContent>
@@ -587,18 +599,95 @@ export default function AdminPage() {
                     Recommended: 600x200px Wide Banner. Max 1MB.
                   </p>
                 </div>
-                {settings?.heroImageUrl && (
-                  <div className="flex justify-center">
-                    <Button variant="outline" onClick={() => setDocumentNonBlocking(doc(firestore, 'settings', 'store'), { heroImageUrl: "" }, { merge: true })}>
-                      <X className="h-4 w-4 mr-2" /> Remove Custom Image
-                    </Button>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </main>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          {editingProduct && (
+            <form onSubmit={handleEditProduct} className="space-y-4">
+              <DialogHeader>
+                  <DialogTitle>Edit Product</DialogTitle>
+                  <DialogDescription>Modify the details of your product.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="edit-name">Name</Label>
+                  <Input id="edit-name" required value={editingProduct.name} onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})} />
+                </div>
+                <div className="flex gap-4">
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="edit-price">Price (Rs.)</Label>
+                    <Input id="edit-price" type="number" required value={editingProduct.price} onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})} />
+                  </div>
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="edit-unit">Unit</Label>
+                    <Input id="edit-unit" required value={editingProduct.unit} onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})} />
+                  </div>
+                </div>
+
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="edit-category">Category</Label>
+                  <Select 
+                    value={editingProduct.category} 
+                    onValueChange={(val) => setEditingProduct({...editingProduct, category: val})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeCategories.map((cat: string) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid w-full items-center gap-1.5">
+                  <Label>Image</Label>
+                  <div className="mt-1 border-2 border-dashed p-4 rounded-lg flex flex-col items-center justify-center relative hover:bg-muted/50 transition-colors">
+                    <img src={editingProduct.imageUrl} className="max-h-32 rounded shadow-sm" alt="Preview" />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+                      <Upload className="h-6 w-6 text-white" />
+                    </div>
+                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleProductFileChange(e, true)} />
+                  </div>
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="edit-desc">Description</Label>
+                  <Textarea id="edit-desc" required value={editingProduct.description} onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})} />
+                </div>
+
+                <div className="flex flex-col gap-4 pt-2 border-t">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="edit-stock">In Stock?</Label>
+                    <Switch id="edit-stock" checked={editingProduct.inStock} onCheckedChange={(val) => setEditingProduct({...editingProduct, inStock: val})} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <Label htmlFor="edit-discount">Discount Deal?</Label>
+                      <span className="text-[10px] text-muted-foreground">Show in Discount Corner</span>
+                    </div>
+                    <Switch id="edit-discount" checked={editingProduct.isDiscounted} onCheckedChange={(val) => setEditingProduct({...editingProduct, isDiscounted: val})} />
+                  </div>
+                  {editingProduct.isDiscounted && (
+                    <div className="grid w-full items-center gap-1.5 animate-in slide-in-from-top-1">
+                      <Label htmlFor="edit-original-price">Original Price (Before Discount)</Label>
+                      <Input id="edit-original-price" type="number" value={editingProduct.originalPrice || ""} onChange={(e) => setEditingProduct({...editingProduct, originalPrice: Number(e.target.value)})} />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                  <Button type="submit" className="w-full">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -21,7 +21,11 @@
         },
         "price": {
           "type": "number",
-          "description": "Price of the product."
+          "description": "Current selling price of the product."
+        },
+        "originalPrice": {
+          "type": "number",
+          "description": "The original price before discount (if applicable)."
         },
         "unit": {
           "type": "string",
@@ -39,6 +43,10 @@
         "inStock": {
           "type": "boolean",
           "description": "Whether the product is currently available for purchase."
+        },
+        "isDiscounted": {
+          "type": "boolean",
+          "description": "Whether the product is part of the Discount Corner."
         }
       },
       "required": [

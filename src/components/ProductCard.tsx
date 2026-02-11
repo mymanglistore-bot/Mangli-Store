@@ -7,13 +7,15 @@ import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, XCircle } from 'lucide-react';
+import { Plus, XCircle, Tag } from 'lucide-react';
 
 export function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
+  const hasDiscount = product.originalPrice && product.originalPrice > product.price;
+  const savings = hasDiscount ? product.originalPrice! - product.price : 0;
 
   return (
-    <Card className={`overflow-hidden group hover:shadow-lg transition-shadow border-none bg-white ${!product.inStock ? 'opacity-75' : ''}`}>
+    <Card className={`overflow-hidden group hover:shadow-lg transition-shadow border-none bg-white relative ${!product.inStock ? 'opacity-75' : ''}`}>
       <div className="aspect-[4/3] relative overflow-hidden">
         <Image
           src={product.imageUrl}
@@ -22,21 +24,45 @@ export function ProductCard({ product }: { product: Product }) {
           className={`object-cover transition-transform group-hover:scale-105 ${!product.inStock ? 'grayscale' : ''}`}
           data-ai-hint="fresh produce"
         />
-        {!product.inStock && (
-          <div className="absolute top-2 right-2 z-10">
+        
+        {/* Badges */}
+        <div className="absolute top-2 right-2 flex flex-col gap-1 z-10 items-end">
+          {!product.inStock && (
             <Badge variant="destructive" className="font-bold">Out of Stock</Badge>
-          </div>
-        )}
+          )}
+          {hasDiscount && product.inStock && (
+            <Badge className="bg-green-600 hover:bg-green-700 text-white font-bold animate-pulse">
+              SAVE Rs. {savings}
+            </Badge>
+          )}
+          {product.isDiscounted && product.inStock && (
+            <Badge variant="secondary" className="bg-primary/90 text-primary-foreground border-none">
+              <Tag className="h-3 w-3 mr-1" /> Deal
+            </Badge>
+          )}
+        </div>
       </div>
+      
       <CardContent className="p-4">
         <div className="flex flex-col mb-2">
           <h3 className="font-headline font-semibold text-lg line-clamp-1">{product.name}</h3>
-          <span className="text-primary font-bold">Rs. {product.price} <span className="text-xs text-muted-foreground font-normal">/ {product.unit || 'Unit'}</span></span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-primary font-bold text-xl">
+              Rs. {product.price}
+            </span>
+            {hasDiscount && (
+              <span className="text-xs text-muted-foreground line-through">
+                Rs. {product.originalPrice}
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground font-normal">/ {product.unit}</span>
+          </div>
         </div>
         <p className="text-muted-foreground text-sm line-clamp-2 min-h-[2.5rem]">
           {product.description}
         </p>
       </CardContent>
+      
       <CardFooter className="p-4 pt-0">
         <Button 
           onClick={() => product.inStock && addToCart(product)}

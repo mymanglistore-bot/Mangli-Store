@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -36,8 +37,13 @@ export default function Home() {
   // Extract unique categories from products
   const categories = useMemo(() => {
     if (!products) return ["All"];
-    const cats = products.map(p => p.category);
-    return ["All", ...Array.from(new Set(cats))];
+    const cats = Array.from(new Set(products.map(p => p.category)));
+    return ["All", ...cats.filter(Boolean)];
+  }, [products]);
+
+  const discountedProducts = useMemo(() => {
+    if (!products) return [];
+    return products.filter(p => p.isDiscounted);
   }, [products]);
 
   const filteredProducts = useMemo(() => {
@@ -65,35 +71,43 @@ export default function Home() {
 
         {/* Discount Corner Section */}
         <section className="mb-16">
-          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 p-8 md:p-14 border border-primary/20 text-center shadow-inner">
+          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 p-8 md:p-14 border border-primary/20 shadow-inner">
             {/* Decorative Orbs */}
             <div className="absolute top-0 right-0 -mt-10 -mr-10 h-40 w-40 bg-primary/20 rounded-full blur-3xl animate-pulse" />
             <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-40 w-40 bg-accent/20 rounded-full blur-3xl" />
             
-            <div className="relative z-10 flex flex-col items-center gap-6">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-widest mb-2">
-                <Sparkles className="h-3.5 w-3.5" />
-                Exclusive Deals
-              </div>
-              
-              <div className="bg-primary text-primary-foreground p-5 rounded-3xl shadow-xl -rotate-2 hover:rotate-0 transition-transform duration-500">
-                <TicketPercent className="h-10 w-10 md:h-12 md:w-12" />
-              </div>
-
-              <div className="space-y-3">
+            <div className="relative z-10">
+              <div className="flex flex-col items-center gap-4 text-center mb-8">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-widest">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Exclusive Deals
+                </div>
                 <h2 className="text-4xl md:text-5xl font-headline font-bold text-primary tracking-tight">
                   Discount Corner
                 </h2>
                 <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto leading-relaxed">
-                  Get ready for the freshest savings in town! We're curating exclusive deals and bundle offers just for you.
+                  Grab these limited-time offers while they last!
                 </p>
               </div>
 
-              <div className="mt-4 px-10 py-3 bg-white/60 backdrop-blur-xl border border-white rounded-2xl shadow-sm">
-                <span className="text-xl md:text-2xl font-bold tracking-[0.2em] text-primary/80 uppercase animate-pulse">
-                  Coming Soon
-                </span>
-              </div>
+              {discountedProducts.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                  {discountedProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-6 py-10">
+                  <div className="bg-primary text-primary-foreground p-5 rounded-3xl shadow-xl -rotate-2 hover:rotate-0 transition-transform duration-500">
+                    <TicketPercent className="h-10 w-10 md:h-12 md:w-12" />
+                  </div>
+                  <div className="mt-4 px-10 py-3 bg-white/60 backdrop-blur-xl border border-white rounded-2xl shadow-sm">
+                    <span className="text-xl md:text-2xl font-bold tracking-[0.2em] text-primary/80 uppercase animate-pulse">
+                      Coming Soon
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
