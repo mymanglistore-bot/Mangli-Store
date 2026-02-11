@@ -7,13 +7,13 @@ import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, XCircle, Tag } from 'lucide-react';
+import { Plus, XCircle, Tag, TrendingDown } from 'lucide-react';
 
 export function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
   
   // Ensure we are working with numbers for calculations
-  const currentPrice = Number(product.price);
+  const currentPrice = Number(product.price) || 0;
   const originalPrice = product.originalPrice ? Number(product.originalPrice) : 0;
   
   const hasDiscount = originalPrice > currentPrice;
@@ -36,7 +36,7 @@ export function ProductCard({ product }: { product: Product }) {
             <Badge variant="destructive" className="font-bold">Out of Stock</Badge>
           )}
           {hasDiscount && product.inStock && (
-            <Badge className="bg-green-600 hover:bg-green-700 text-white font-bold animate-pulse">
+            <Badge className="bg-green-600 hover:bg-green-700 text-white font-bold animate-pulse shadow-md">
               SAVE Rs. {savings}
             </Badge>
           )}
@@ -50,20 +50,30 @@ export function ProductCard({ product }: { product: Product }) {
       
       <CardContent className="p-4">
         <div className="flex flex-col mb-2">
-          <h3 className="font-headline font-semibold text-lg line-clamp-1">{product.name}</h3>
-          <div className="flex items-baseline gap-2">
-            <span className="text-primary font-bold text-xl">
-              Rs. {currentPrice}
-            </span>
-            {hasDiscount && (
-              <span className="text-xs text-muted-foreground line-through">
-                Rs. {originalPrice}
+          <h3 className="font-headline font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">{product.name}</h3>
+          
+          <div className="flex flex-col mt-1">
+            <div className="flex items-baseline gap-2">
+              <span className="text-primary font-bold text-xl">
+                Rs. {currentPrice}
               </span>
-            )}
-            <span className="text-xs text-muted-foreground font-normal">/ {product.unit}</span>
+              {hasDiscount && (
+                <span className="text-sm text-muted-foreground line-through decoration-destructive/50">
+                  Rs. {originalPrice}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground font-normal">per {product.unit}</span>
+              {hasDiscount && (
+                <span className="text-[10px] text-green-600 font-bold flex items-center gap-0.5">
+                  <TrendingDown className="h-3 w-3" /> Special Offer
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <p className="text-muted-foreground text-sm line-clamp-2 min-h-[2.5rem]">
+        <p className="text-muted-foreground text-xs line-clamp-2 min-h-[2rem]">
           {product.description}
         </p>
       </CardContent>

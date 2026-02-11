@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info, Tags, Edit2, LayoutGrid, TicketPercent } from 'lucide-react';
+import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info, Tags, Edit2, LayoutGrid, TicketPercent, TrendingDown } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -42,7 +42,7 @@ export default function AdminPage() {
     isDiscounted: false
   });
 
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [editingCategoryIndex, setEditingCategoryIndex] = useState<number | null>(null);
 
@@ -183,9 +183,8 @@ export default function AdminPage() {
   const openEditDialog = (product: Product) => {
     setEditingProduct({
       ...product,
-      // Ensure we pass string values to the input fields for a better UX
-      price: Number(product.price) as any,
-      originalPrice: product.originalPrice ? Number(product.originalPrice) as any : "" as any
+      price: product.price,
+      originalPrice: product.originalPrice ?? ""
     });
     setIsEditDialogOpen(true);
   };
@@ -414,8 +413,10 @@ export default function AdminPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span>Rs. {p.price}</span>
-                          {p.originalPrice && <span className="text-[10px] text-muted-foreground line-through">Rs. {p.originalPrice}</span>}
+                          <span className="font-bold">Rs. {p.price}</span>
+                          {p.originalPrice && Number(p.originalPrice) > Number(p.price) && (
+                            <span className="text-[10px] text-muted-foreground line-through decoration-destructive/30">Rs. {p.originalPrice}</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -467,26 +468,31 @@ export default function AdminPage() {
                           <p className="text-xs">Edit a product and toggle "Discount Deal" to add it here.</p>
                         </TableCell>
                       </TableRow>
-                  ) : discountedProducts.map(p => (
-                    <TableRow key={p.id}>
-                      <TableCell><img src={p.imageUrl} className="w-10 h-10 object-cover rounded shadow-sm" alt={p.name} /></TableCell>
-                      <TableCell className="font-medium">{p.name}</TableCell>
-                      <TableCell className="text-primary font-bold">Rs. {p.price}</TableCell>
-                      <TableCell className="text-muted-foreground line-through">Rs. {p.originalPrice || '-'}</TableCell>
-                      <TableCell>
-                        {p.originalPrice && Number(p.originalPrice) > Number(p.price) ? (
-                          <span className="text-green-600 font-bold">
-                            Rs. {Number(p.originalPrice) - Number(p.price)} OFF
-                          </span>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(p)}>
-                          Edit Deal
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  ) : discountedProducts.map(p => {
+                    const savings = p.originalPrice ? Number(p.originalPrice) - Number(p.price) : 0;
+                    return (
+                      <TableRow key={p.id}>
+                        <TableCell><img src={p.imageUrl} className="w-10 h-10 object-cover rounded shadow-sm" alt={p.name} /></TableCell>
+                        <TableCell className="font-medium">{p.name}</TableCell>
+                        <TableCell className="text-primary font-bold">Rs. {p.price}</TableCell>
+                        <TableCell className="text-muted-foreground line-through">Rs. {p.originalPrice || '-'}</TableCell>
+                        <TableCell>
+                          {savings > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs font-bold">
+                              <TrendingDown className="h-3 w-3" /> Rs. {savings} OFF
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">No original price set</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" onClick={() => openEditDialog(p)}>
+                            Edit Deal
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </Card>
@@ -626,7 +632,7 @@ export default function AdminPage() {
                 <div className="flex gap-4">
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="edit-price">Price (Rs.)</Label>
-                    <Input id="edit-price" type="number" required value={editingProduct.price ?? ""} onChange={(e) => setEditingProduct({...editingProduct, price: e.target.value as any})} />
+                    <Input id="edit-price" type="number" required value={editingProduct.price ?? ""} onChange={(e) => setEditingProduct({...editingProduct, price: e.target.value})} />
                   </div>
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="edit-unit">Unit</Label>
@@ -681,7 +687,7 @@ export default function AdminPage() {
                   {editingProduct.isDiscounted && (
                     <div className="grid w-full items-center gap-1.5 animate-in slide-in-from-top-1">
                       <Label htmlFor="edit-original-price">Original Price (Before Discount)</Label>
-                      <Input id="edit-original-price" type="number" value={editingProduct.originalPrice ?? ""} onChange={(e) => setEditingProduct({...editingProduct, originalPrice: e.target.value as any})} />
+                      <Input id="edit-original-price" type="number" value={editingProduct.originalPrice ?? ""} onChange={(e) => setEditingProduct({...editingProduct, originalPrice: e.target.value})} />
                     </div>
                   )}
                 </div>
