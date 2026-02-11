@@ -145,11 +145,11 @@ export default function AdminPage() {
     const productsRef = collection(firestore, 'products');
     const newDocRef = doc(productsRef);
     
-    const productData: Product = {
+    const productData: any = {
       id: newDocRef.id,
       name: newProduct.name,
       price: Number(newProduct.price),
-      originalPrice: newProduct.originalPrice ? Number(newProduct.originalPrice) : undefined,
+      originalPrice: newProduct.originalPrice ? Number(newProduct.originalPrice) : null,
       description: newProduct.description,
       category: newProduct.category,
       unit: newProduct.unit || "Unit",
@@ -157,6 +157,7 @@ export default function AdminPage() {
       inStock: newProduct.inStock,
       isDiscounted: newProduct.isDiscounted
     };
+
     setDocumentNonBlocking(newDocRef, productData, { merge: true });
     setIsAddDialogOpen(false);
     setNewProduct({ name: "", price: "", originalPrice: "", description: "", category: "", unit: "Unit", imageUrl: "", inStock: true, isDiscounted: false });
@@ -171,7 +172,9 @@ export default function AdminPage() {
     const updateData = {
       ...editingProduct,
       price: Number(editingProduct.price),
-      originalPrice: editingProduct.originalPrice ? Number(editingProduct.originalPrice) : undefined
+      originalPrice: (editingProduct.originalPrice !== "" && editingProduct.originalPrice !== undefined && editingProduct.originalPrice !== null) 
+        ? Number(editingProduct.originalPrice) 
+        : null
     };
 
     updateDocumentNonBlocking(docRef, updateData);
