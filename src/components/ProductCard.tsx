@@ -11,8 +11,13 @@ import { Plus, XCircle, Tag } from 'lucide-react';
 
 export function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
-  const hasDiscount = product.originalPrice && product.originalPrice > product.price;
-  const savings = hasDiscount ? product.originalPrice! - product.price : 0;
+  
+  // Ensure we are working with numbers for calculations
+  const currentPrice = Number(product.price);
+  const originalPrice = product.originalPrice ? Number(product.originalPrice) : 0;
+  
+  const hasDiscount = originalPrice > currentPrice;
+  const savings = hasDiscount ? originalPrice - currentPrice : 0;
 
   return (
     <Card className={`overflow-hidden group hover:shadow-lg transition-shadow border-none bg-white relative ${!product.inStock ? 'opacity-75' : ''}`}>
@@ -35,7 +40,7 @@ export function ProductCard({ product }: { product: Product }) {
               SAVE Rs. {savings}
             </Badge>
           )}
-          {product.isDiscounted && product.inStock && (
+          {product.isDiscounted && !hasDiscount && product.inStock && (
             <Badge variant="secondary" className="bg-primary/90 text-primary-foreground border-none">
               <Tag className="h-3 w-3 mr-1" /> Deal
             </Badge>
@@ -48,11 +53,11 @@ export function ProductCard({ product }: { product: Product }) {
           <h3 className="font-headline font-semibold text-lg line-clamp-1">{product.name}</h3>
           <div className="flex items-baseline gap-2">
             <span className="text-primary font-bold text-xl">
-              Rs. {product.price}
+              Rs. {currentPrice}
             </span>
             {hasDiscount && (
               <span className="text-xs text-muted-foreground line-through">
-                Rs. {product.originalPrice}
+                Rs. {originalPrice}
               </span>
             )}
             <span className="text-xs text-muted-foreground font-normal">/ {product.unit}</span>

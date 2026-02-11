@@ -181,7 +181,12 @@ export default function AdminPage() {
   };
 
   const openEditDialog = (product: Product) => {
-    setEditingProduct(product);
+    setEditingProduct({
+      ...product,
+      // Ensure we pass string values to the input fields for a better UX
+      price: Number(product.price) as any,
+      originalPrice: product.originalPrice ? Number(product.originalPrice) as any : "" as any
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -469,9 +474,9 @@ export default function AdminPage() {
                       <TableCell className="text-primary font-bold">Rs. {p.price}</TableCell>
                       <TableCell className="text-muted-foreground line-through">Rs. {p.originalPrice || '-'}</TableCell>
                       <TableCell>
-                        {p.originalPrice ? (
+                        {p.originalPrice && Number(p.originalPrice) > Number(p.price) ? (
                           <span className="text-green-600 font-bold">
-                            Rs. {p.originalPrice - p.price} OFF
+                            Rs. {Number(p.originalPrice) - Number(p.price)} OFF
                           </span>
                         ) : '-'}
                       </TableCell>
@@ -621,7 +626,7 @@ export default function AdminPage() {
                 <div className="flex gap-4">
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="edit-price">Price (Rs.)</Label>
-                    <Input id="edit-price" type="number" required value={editingProduct.price} onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})} />
+                    <Input id="edit-price" type="number" required value={editingProduct.price} onChange={(e) => setEditingProduct({...editingProduct, price: e.target.value as any})} />
                   </div>
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="edit-unit">Unit</Label>
@@ -676,7 +681,7 @@ export default function AdminPage() {
                   {editingProduct.isDiscounted && (
                     <div className="grid w-full items-center gap-1.5 animate-in slide-in-from-top-1">
                       <Label htmlFor="edit-original-price">Original Price (Before Discount)</Label>
-                      <Input id="edit-original-price" type="number" value={editingProduct.originalPrice || ""} onChange={(e) => setEditingProduct({...editingProduct, originalPrice: Number(e.target.value)})} />
+                      <Input id="edit-original-price" type="number" value={editingProduct.originalPrice} onChange={(e) => setEditingProduct({...editingProduct, originalPrice: e.target.value as any})} />
                     </div>
                   )}
                 </div>
