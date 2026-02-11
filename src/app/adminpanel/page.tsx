@@ -19,6 +19,7 @@ import { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useDoc, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, useAuth, initiateAnonymousSignIn } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -448,6 +449,14 @@ export default function AdminPage() {
               <h1 className="text-2xl font-bold">Discount Corner Management</h1>
               <p className="text-sm text-muted-foreground">Products listed here will appear in the special section on the home page.</p>
             </div>
+
+            <Alert className="mb-6 bg-primary/5 border-primary/20">
+              <Info className="h-4 w-4" />
+              <AlertTitle className="text-sm font-bold">How Discounts Work</AlertTitle>
+              <AlertDescription className="text-xs">
+                To show a strikethrough price and a "SAVE" badge, the <strong>Original Price</strong> must be <strong>higher</strong> than the Selling Price.
+              </AlertDescription>
+            </Alert>
             
             <Card>
               <Table>
@@ -617,8 +626,10 @@ export default function AdminPage() {
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                    <Info className="h-3 w-3" />
-                    Recommended: 600x200px Wide Banner. Max 1MB.
+                    <div className="flex items-center gap-1">
+                      <Info className="h-3 w-3" />
+                      Recommended: 600x200px Wide Banner. Max 1MB.
+                    </div>
                   </p>
                 </div>
               </CardContent>
@@ -698,7 +709,7 @@ export default function AdminPage() {
                   {editingProduct.isDiscounted && (
                     <div className="grid w-full items-center gap-1.5 animate-in slide-in-from-top-1">
                       <Label htmlFor="edit-original-price">Original Price (Before Discount)</Label>
-                      <Input id="edit-original-price" type="number" value={editingProduct.originalPrice ?? ""} onChange={(e) => setEditingProduct({...editingProduct, originalPrice: e.target.value})} />
+                      <Input id="edit-original-price" type="number" placeholder="e.g. 150" value={editingProduct.originalPrice ?? ""} onChange={(e) => setEditingProduct({...editingProduct, originalPrice: e.target.value})} />
                       <p className="text-[10px] text-muted-foreground flex items-center gap-1"><Info className="h-3 w-3" /> This should be higher than selling price.</p>
                     </div>
                   )}
