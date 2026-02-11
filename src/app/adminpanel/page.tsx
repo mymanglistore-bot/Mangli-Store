@@ -19,9 +19,6 @@ import { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useDoc, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, useAuth, initiateAnonymousSignIn } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-
-const PRODUCT_UNITS = ["Kg", "g", "Unit", "Bunch", "Packet", "Ltr", "ml", "Dozen"];
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -61,7 +58,6 @@ export default function AdminPage() {
 
   const { data: settings } = useDoc<any>(settingsRef);
 
-  // Derive active categories: dynamic from settings or fallback to defaults
   const activeCategories = settings?.categories || DEFAULT_CATEGORIES;
 
   const handleLogin = () => {
@@ -151,7 +147,7 @@ export default function AdminPage() {
       price: Number(newProduct.price),
       description: newProduct.description,
       category: newProduct.category,
-      unit: newProduct.unit,
+      unit: newProduct.unit || "Unit",
       imageUrl: newProduct.imageUrl,
       inStock: newProduct.inStock
     };
@@ -296,21 +292,8 @@ export default function AdminPage() {
                             <Input id="price" type="number" required value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} />
                           </div>
                           <div className="grid w-full items-center gap-1.5">
-                            <Label htmlFor="unit">Unit</Label>
-                            <Select 
-                              value={newProduct.unit} 
-                              onValueChange={(val) => setNewProduct({...newProduct, unit: val})}
-                              required
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Unit" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {PRODUCT_UNITS.map((u) => (
-                                  <SelectItem key={u} value={u}>{u}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Label htmlFor="unit">Unit (e.g. Kg, g, Unit)</Label>
+                            <Input id="unit" required value={newProduct.unit} onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})} placeholder="Kg, g, Unit, etc." />
                           </div>
                         </div>
 
@@ -434,20 +417,8 @@ export default function AdminPage() {
                           <Input id="edit-price" type="number" required value={editingProduct.price} onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})} />
                         </div>
                         <div className="grid w-full items-center gap-1.5">
-                          <Label htmlFor="edit-unit">Unit</Label>
-                          <Select 
-                            value={editingProduct.unit || "Unit"} 
-                            onValueChange={(val) => setEditingProduct({...editingProduct, unit: val})}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Unit" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PRODUCT_UNITS.map((u) => (
-                                <SelectItem key={u} value={u}>{u}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Label htmlFor="edit-unit">Unit (e.g. Kg, g, Unit)</Label>
+                          <Input id="edit-unit" required value={editingProduct.unit} onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})} placeholder="Kg, g, Unit, etc." />
                         </div>
                       </div>
 
