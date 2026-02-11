@@ -73,27 +73,27 @@ export default function Home() {
 
         {/* Discount Corner Section */}
         <section className="mb-16">
-          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 p-8 md:p-14 border border-primary/20 shadow-inner">
+          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 p-6 md:p-10 border border-primary/20 shadow-inner">
             {/* Decorative Orbs */}
             <div className="absolute top-0 right-0 -mt-10 -mr-10 h-40 w-40 bg-primary/20 rounded-full blur-3xl animate-pulse" />
             <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-40 w-40 bg-accent/20 rounded-full blur-3xl" />
             
             <div className="relative z-10">
-              <div className="flex flex-col items-center gap-4 text-center mb-8">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-widest">
-                  <Sparkles className="h-3.5 w-3.5" />
+              <div className="flex flex-col items-center gap-2 text-center mb-8">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-bold uppercase tracking-widest">
+                  <Sparkles className="h-3 w-3" />
                   Exclusive Deals
                 </div>
-                <h2 className="text-4xl md:text-5xl font-headline font-bold text-primary tracking-tight">
+                <h2 className="text-3xl md:text-4xl font-headline font-bold text-primary tracking-tight">
                   Discount Corner
                 </h2>
-                <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+                <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto leading-relaxed">
                   Grab these limited-time offers while they last!
                 </p>
               </div>
 
               {discountedProducts.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
                   {discountedProducts.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
@@ -116,16 +116,16 @@ export default function Home() {
 
         <section id="products">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-            <h2 className="text-3xl font-headline font-bold">Our Catalog</h2>
+            <h2 className="text-2xl font-headline font-bold">Our Catalog</h2>
             
             {categories.length > 1 && (
               <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
-                <TabsList className="bg-muted/50 h-12 p-1 overflow-x-auto flex-nowrap justify-start max-w-full">
+                <TabsList className="bg-muted/50 h-10 p-1 overflow-x-auto flex-nowrap justify-start max-w-full">
                   {categories.map((cat) => (
                     <TabsTrigger 
                       key={cat} 
                       value={cat}
-                      className="px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                      className="px-4 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                     >
                       {cat}
                     </TabsTrigger>
@@ -140,7 +140,7 @@ export default function Home() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : filteredProducts && filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
               {filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
