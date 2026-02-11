@@ -16,6 +16,7 @@ export function ProductCard({ product }: { product: Product }) {
   const currentPrice = Number(product.price) || 0;
   const originalPrice = product.originalPrice ? Number(product.originalPrice) : 0;
   
+  // Savings logic: only show if original price is truly higher
   const hasDiscount = originalPrice > currentPrice;
   const savings = hasDiscount ? originalPrice - currentPrice : 0;
 

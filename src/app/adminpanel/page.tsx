@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info, Tags, Edit2, LayoutGrid, TicketPercent, TrendingDown } from 'lucide-react';
+import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info, Tags, Edit2, LayoutGrid, TicketPercent, TrendingDown, AlertCircle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -305,11 +305,11 @@ export default function AdminPage() {
                         </div>
                         <div className="flex gap-4">
                           <div className="grid w-full items-center gap-1.5">
-                            <Label htmlFor="price">Price (Rs.)</Label>
+                            <Label htmlFor="price">Selling Price (Rs.)</Label>
                             <Input id="price" type="number" required value={newProduct.price ?? ""} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} />
                           </div>
                           <div className="grid w-full items-center gap-1.5">
-                            <Label htmlFor="unit">Unit (e.g. Kg, g, Unit)</Label>
+                            <Label htmlFor="unit">Unit (e.g. Kg, Bunch)</Label>
                             <Input id="unit" required value={newProduct.unit ?? ""} onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})} placeholder="Kg, g, Unit, etc." />
                           </div>
                         </div>
@@ -368,6 +368,7 @@ export default function AdminPage() {
                             <div className="grid w-full items-center gap-1.5 animate-in slide-in-from-top-1">
                               <Label htmlFor="original-price-new">Original Price (Before Discount)</Label>
                               <Input id="original-price-new" type="number" placeholder="e.g. 150" value={newProduct.originalPrice ?? ""} onChange={(e) => setNewProduct({...newProduct, originalPrice: e.target.value})} />
+                              <p className="text-[10px] text-muted-foreground flex items-center gap-1"><Info className="h-3 w-3" /> This should be higher than selling price.</p>
                             </div>
                           )}
                         </div>
@@ -472,7 +473,10 @@ export default function AdminPage() {
                         </TableCell>
                       </TableRow>
                   ) : discountedProducts.map(p => {
-                    const savings = p.originalPrice ? Number(p.originalPrice) - Number(p.price) : 0;
+                    const price = Number(p.price) || 0;
+                    const originalPrice = Number(p.originalPrice) || 0;
+                    const savings = originalPrice > price ? originalPrice - price : 0;
+                    
                     return (
                       <TableRow key={p.id}>
                         <TableCell><img src={p.imageUrl} className="w-10 h-10 object-cover rounded shadow-sm" alt={p.name} /></TableCell>
@@ -483,6 +487,10 @@ export default function AdminPage() {
                           {savings > 0 ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs font-bold">
                               <TrendingDown className="h-3 w-3" /> Rs. {savings} OFF
+                            </span>
+                          ) : p.originalPrice ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-destructive font-medium italic">
+                              <AlertCircle className="h-3 w-3" /> Original price must be higher
                             </span>
                           ) : (
                             <span className="text-xs text-muted-foreground">No original price set</span>
@@ -634,7 +642,7 @@ export default function AdminPage() {
                 </div>
                 <div className="flex gap-4">
                   <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="edit-price">Price (Rs.)</Label>
+                    <Label htmlFor="edit-price">Selling Price (Rs.)</Label>
                     <Input id="edit-price" type="number" required value={editingProduct.price ?? ""} onChange={(e) => setEditingProduct({...editingProduct, price: e.target.value})} />
                   </div>
                   <div className="grid w-full items-center gap-1.5">
@@ -691,6 +699,7 @@ export default function AdminPage() {
                     <div className="grid w-full items-center gap-1.5 animate-in slide-in-from-top-1">
                       <Label htmlFor="edit-original-price">Original Price (Before Discount)</Label>
                       <Input id="edit-original-price" type="number" value={editingProduct.originalPrice ?? ""} onChange={(e) => setEditingProduct({...editingProduct, originalPrice: e.target.value})} />
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1"><Info className="h-3 w-3" /> This should be higher than selling price.</p>
                     </div>
                   )}
                 </div>
