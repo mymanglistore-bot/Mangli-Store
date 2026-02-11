@@ -16,7 +16,8 @@ export function ProductCard({ product }: { product: Product }) {
   const currentPrice = Number(product.price) || 0;
   const originalPrice = product.originalPrice ? Number(product.originalPrice) : 0;
   
-  // Savings logic: only show if product is marked as a discount deal AND original price is truly higher
+  // Savings logic: only show if product is explicitly marked as a discount deal 
+  // AND the original price is truly higher than the current price
   const hasDiscount = !!product.isDiscounted && originalPrice > currentPrice;
   const savings = hasDiscount ? originalPrice - currentPrice : 0;
 
@@ -31,19 +32,19 @@ export function ProductCard({ product }: { product: Product }) {
           data-ai-hint="fresh produce"
         />
         
-        {/* Badges */}
+        {/* Badges - Only show if marked as discounted AND in stock */}
         <div className="absolute top-2 right-2 flex flex-col gap-1 z-10 items-end">
           {!product.inStock && (
-            <Badge variant="destructive" className="font-bold">Out of Stock</Badge>
+            <Badge variant="destructive" className="font-bold shadow-sm">Out of Stock</Badge>
           )}
           {hasDiscount && product.inStock && (
-            <Badge className="bg-green-600 hover:bg-green-700 text-white font-bold animate-pulse shadow-md">
+            <Badge className="bg-green-600 hover:bg-green-700 text-white font-bold animate-pulse shadow-md border-none">
               SAVE Rs. {savings}
             </Badge>
           )}
-          {/* Only show "Deal" badge if it's marked as discounted but doesn't have a specific savings amount */}
+          {/* Only show "Deal" badge if it's marked as discounted but doesn't have a specific savings amount (e.g. prices equal) */}
           {product.isDiscounted && !hasDiscount && product.inStock && (
-            <Badge variant="secondary" className="bg-primary/90 text-primary-foreground border-none">
+            <Badge variant="secondary" className="bg-primary/90 text-primary-foreground border-none shadow-sm">
               <Tag className="h-3 w-3 mr-1" /> Deal
             </Badge>
           )}

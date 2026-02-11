@@ -41,11 +41,13 @@ export default function Home() {
     return ["All", ...cats.filter(Boolean)];
   }, [products]);
 
+  // Discounted products are explicitly those with the isDiscounted flag set to true
   const discountedProducts = useMemo(() => {
     if (!products) return [];
     return products.filter(p => p.isDiscounted);
   }, [products]);
 
+  // Catalog filtered by category, shows all products (including discounted ones)
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     if (activeCategory === "All") return products;
