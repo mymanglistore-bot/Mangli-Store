@@ -299,23 +299,23 @@ export default function AdminPage() {
                       <div className="space-y-4">
                         <div className="grid w-full items-center gap-1.5">
                           <Label htmlFor="name">Name</Label>
-                          <Input id="name" required value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} />
+                          <Input id="name" required value={newProduct.name ?? ""} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} />
                         </div>
                         <div className="flex gap-4">
                           <div className="grid w-full items-center gap-1.5">
                             <Label htmlFor="price">Price (Rs.)</Label>
-                            <Input id="price" type="number" required value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} />
+                            <Input id="price" type="number" required value={newProduct.price ?? ""} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} />
                           </div>
                           <div className="grid w-full items-center gap-1.5">
                             <Label htmlFor="unit">Unit (e.g. Kg, g, Unit)</Label>
-                            <Input id="unit" required value={newProduct.unit} onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})} placeholder="Kg, g, Unit, etc." />
+                            <Input id="unit" required value={newProduct.unit ?? ""} onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})} placeholder="Kg, g, Unit, etc." />
                           </div>
                         </div>
 
                         <div className="grid w-full items-center gap-1.5">
                           <Label htmlFor="category">Category</Label>
                           <Select 
-                            value={newProduct.category} 
+                            value={newProduct.category ?? ""} 
                             onValueChange={(val) => setNewProduct({...newProduct, category: val})}
                             required
                           >
@@ -347,7 +347,7 @@ export default function AdminPage() {
 
                         <div className="grid w-full items-center gap-1.5">
                           <Label htmlFor="desc">Description</Label>
-                          <Textarea id="desc" required value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} />
+                          <Textarea id="desc" required value={newProduct.description ?? ""} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} />
                         </div>
 
                         <div className="flex flex-col gap-4 pt-2 border-t">
@@ -365,7 +365,7 @@ export default function AdminPage() {
                           {newProduct.isDiscounted && (
                             <div className="grid w-full items-center gap-1.5 animate-in slide-in-from-top-1">
                               <Label htmlFor="original-price-new">Original Price (Before Discount)</Label>
-                              <Input id="original-price-new" type="number" placeholder="e.g. 150" value={newProduct.originalPrice} onChange={(e) => setNewProduct({...newProduct, originalPrice: e.target.value})} />
+                              <Input id="original-price-new" type="number" placeholder="e.g. 150" value={newProduct.originalPrice ?? ""} onChange={(e) => setNewProduct({...newProduct, originalPrice: e.target.value})} />
                             </div>
                           )}
                         </div>
@@ -502,7 +502,7 @@ export default function AdminPage() {
                 <div className="flex gap-2">
                   <Input 
                     placeholder="New category name..." 
-                    value={newCategoryName} 
+                    value={newCategoryName ?? ""} 
                     onChange={(e) => setNewCategoryName(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
@@ -621,23 +621,23 @@ export default function AdminPage() {
               <div className="space-y-4">
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="edit-name">Name</Label>
-                  <Input id="edit-name" required value={editingProduct.name} onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})} />
+                  <Input id="edit-name" required value={editingProduct.name ?? ""} onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})} />
                 </div>
                 <div className="flex gap-4">
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="edit-price">Price (Rs.)</Label>
-                    <Input id="edit-price" type="number" required value={editingProduct.price} onChange={(e) => setEditingProduct({...editingProduct, price: e.target.value as any})} />
+                    <Input id="edit-price" type="number" required value={editingProduct.price ?? ""} onChange={(e) => setEditingProduct({...editingProduct, price: e.target.value as any})} />
                   </div>
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="edit-unit">Unit</Label>
-                    <Input id="edit-unit" required value={editingProduct.unit} onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})} />
+                    <Input id="edit-unit" required value={editingProduct.unit ?? ""} onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})} />
                   </div>
                 </div>
 
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="edit-category">Category</Label>
                   <Select 
-                    value={editingProduct.category} 
+                    value={editingProduct.category ?? ""} 
                     onValueChange={(val) => setEditingProduct({...editingProduct, category: val})}
                   >
                     <SelectTrigger>
@@ -663,7 +663,7 @@ export default function AdminPage() {
                 </div>
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="edit-desc">Description</Label>
-                  <Textarea id="edit-desc" required value={editingProduct.description} onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})} />
+                  <Textarea id="edit-desc" required value={editingProduct.description ?? ""} onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})} />
                 </div>
 
                 <div className="flex flex-col gap-4 pt-2 border-t">
@@ -681,7 +681,7 @@ export default function AdminPage() {
                   {editingProduct.isDiscounted && (
                     <div className="grid w-full items-center gap-1.5 animate-in slide-in-from-top-1">
                       <Label htmlFor="edit-original-price">Original Price (Before Discount)</Label>
-                      <Input id="edit-original-price" type="number" value={editingProduct.originalPrice} onChange={(e) => setEditingProduct({...editingProduct, originalPrice: e.target.value as any})} />
+                      <Input id="edit-original-price" type="number" value={editingProduct.originalPrice ?? ""} onChange={(e) => setEditingProduct({...editingProduct, originalPrice: e.target.value as any})} />
                     </div>
                   )}
                 </div>
