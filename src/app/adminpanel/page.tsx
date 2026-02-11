@@ -1,19 +1,20 @@
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { ADMIN_PASS, DEFAULT_CATEGORIES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info, Tags, Edit2 } from 'lucide-react';
+import { Plus, Trash2, ShieldAlert, Database, Loader2, Upload, X, Image as ImageIcon, Settings, Sparkles, Info, Tags, Edit2, LayoutGrid } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/select";
 import { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useDoc, useMemoFirebase, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, useAuth, initiateAnonymousSignIn } from '@/firebase';
@@ -25,6 +26,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
   const auth = useAuth();
@@ -33,15 +35,14 @@ export default function AdminPage() {
     name: "",
     price: "",
     description: "",
-    category: "Vegetables",
+    category: "",
     imageUrl: "",
     inStock: true
   });
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-
-  const [customCategory, setCustomCategory] = useState("");
-  const [useCustomCategory, setUseCustomCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [editingCategoryIndex, setEditingCategoryIndex] = useState<number | null>(null);
 
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -56,6 +57,9 @@ export default function AdminPage() {
   }, [firestore]);
 
   const { data: settings } = useDoc<any>(settingsRef);
+
+  // Derive active categories: dynamic from settings or fallback to defaults
+  const activeCategories = settings?.categories || DEFAULT_CATEGORIES;
 
   const handleLogin = () => {
     if (password.trim() === ADMIN_PASS) {
@@ -131,29 +135,25 @@ export default function AdminPage() {
 
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !newProduct.imageUrl) {
+    if (!firestore || !newProduct.imageUrl || !newProduct.category) {
         toast({ variant: "destructive", title: "Missing Information", description: "Please provide all details and an image." });
         return;
     }
     const productsRef = collection(firestore, 'products');
     const newDocRef = doc(productsRef);
     
-    const finalCategory = useCustomCategory ? customCategory : newProduct.category;
-
     const productData: Product = {
       id: newDocRef.id,
       name: newProduct.name,
       price: Number(newProduct.price),
       description: newProduct.description,
-      category: finalCategory,
+      category: newProduct.category,
       imageUrl: newProduct.imageUrl,
       inStock: newProduct.inStock
     };
     setDocumentNonBlocking(newDocRef, productData, { merge: true });
     setIsAddDialogOpen(false);
-    setNewProduct({ name: "", price: "", description: "", category: "Vegetables", imageUrl: "", inStock: true });
-    setCustomCategory("");
-    setUseCustomCategory(false);
+    setNewProduct({ name: "", price: "", description: "", category: "", imageUrl: "", inStock: true });
     toast({ title: "Product Added", description: `${productData.name} is now live.` });
   };
 
@@ -162,28 +162,19 @@ export default function AdminPage() {
     if (!firestore || !editingProduct) return;
 
     const docRef = doc(firestore, 'products', editingProduct.id);
-    const finalCategory = useCustomCategory ? customCategory : editingProduct.category;
-
     const updateData = {
       ...editingProduct,
-      price: Number(editingProduct.price),
-      category: finalCategory
+      price: Number(editingProduct.price)
     };
 
     updateDocumentNonBlocking(docRef, updateData);
     setIsEditDialogOpen(false);
     setEditingProduct(null);
-    setCustomCategory("");
-    setUseCustomCategory(false);
     toast({ title: "Product Updated", description: `${updateData.name} has been updated.` });
   };
 
   const openEditDialog = (product: Product) => {
     setEditingProduct(product);
-    setUseCustomCategory(!DEFAULT_CATEGORIES.includes(product.category));
-    if (!DEFAULT_CATEGORIES.includes(product.category)) {
-      setCustomCategory(product.category);
-    }
     setIsEditDialogOpen(true);
   };
 
@@ -197,52 +188,38 @@ export default function AdminPage() {
     });
   };
 
-  const seedDatabase = () => {
-    if (!firestore) return;
-    PlaceHolderImages.forEach((img, idx) => {
-      if (img.id === 'logo') return; 
-      const productsRef = collection(firestore, 'products');
-      const newDocRef = doc(productsRef);
-      const cat = idx % 2 === 0 ? "Fruits" : "Vegetables";
-      const productData: Product = {
-        id: newDocRef.id,
-        name: img.description,
-        price: Math.floor(Math.random() * 100) + 50,
-        description: `Premium quality ${img.description.toLowerCase()} for your kitchen.`,
-        category: cat,
-        imageUrl: img.imageUrl,
-        inStock: true
-      };
-      setDocumentNonBlocking(newDocRef, productData, { merge: true });
-    });
-    toast({ title: "Database Seeded", description: "Mock products have been added to your catalog." });
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim() || !firestore) return;
+    const updatedCategories = [...activeCategories, newCategoryName.trim()];
+    const docRef = doc(firestore, 'settings', 'store');
+    setDocumentNonBlocking(docRef, { categories: updatedCategories }, { merge: true });
+    setNewCategoryName("");
+    toast({ title: "Category Added", description: `Added ${newCategoryName} to the list.` });
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <ShieldAlert className="h-8 w-8" />
-            </div>
-            <CardTitle className="font-headline text-2xl">Admin Login</CardTitle>
-            <CardDescription>Enter your secret administrative password</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input 
-              type="password" 
-              placeholder="Password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()} 
-            />
-            <Button onClick={handleLogin} className="w-full h-12">Login</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handleDeleteCategory = (index: number) => {
+    if (!firestore) return;
+    const updatedCategories = activeCategories.filter((_: any, i: number) => i !== index);
+    const docRef = doc(firestore, 'settings', 'store');
+    setDocumentNonBlocking(docRef, { categories: updatedCategories }, { merge: true });
+    toast({ title: "Category Deleted", description: "The category has been removed." });
+  };
+
+  const handleEditCategory = (index: number) => {
+    setEditingCategoryIndex(index);
+    setNewCategoryName(activeCategories[index]);
+  };
+
+  const handleSaveCategoryEdit = () => {
+    if (editingCategoryIndex === null || !newCategoryName.trim() || !firestore) return;
+    const updatedCategories = [...activeCategories];
+    updatedCategories[editingCategoryIndex] = newCategoryName.trim();
+    const docRef = doc(firestore, 'settings', 'store');
+    setDocumentNonBlocking(docRef, { categories: updatedCategories }, { merge: true });
+    setEditingCategoryIndex(null);
+    setNewCategoryName("");
+    toast({ title: "Category Updated", description: "The category name has been changed." });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -252,6 +229,9 @@ export default function AdminPage() {
           <TabsList className="mb-8">
             <TabsTrigger value="inventory" className="flex items-center gap-2">
               <Database className="h-4 w-4" /> Inventory
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="flex items-center gap-2">
+              <LayoutGrid className="h-4 w-4" /> Categories
             </TabsTrigger>
             <TabsTrigger value="branding" className="flex items-center gap-2">
               <Settings className="h-4 w-4" /> Branding
@@ -265,9 +245,6 @@ export default function AdminPage() {
                 <p className="text-sm text-muted-foreground">Manage your store's live inventory</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={seedDatabase} className="hidden sm:flex">
-                  <Sparkles className="h-4 w-4 mr-2" /> Seed Data
-                </Button>
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                   <DialogTrigger asChild>
                       <Button><Plus className="h-4 w-4 mr-2" /> Add Product</Button>
@@ -290,42 +267,21 @@ export default function AdminPage() {
 
                         <div className="grid w-full items-center gap-1.5">
                           <Label htmlFor="category">Category</Label>
-                          {useCustomCategory ? (
-                            <div className="flex gap-2">
-                              <Input 
-                                placeholder="Enter custom category" 
-                                value={customCategory} 
-                                onChange={(e) => setCustomCategory(e.target.value)} 
-                                autoFocus
-                              />
-                              <Button type="button" variant="ghost" size="icon" onClick={() => setUseCustomCategory(false)}>
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <Select 
-                              value={newProduct.category} 
-                              onValueChange={(val) => {
-                                if (val === "custom") {
-                                  setUseCustomCategory(true);
-                                } else {
-                                  setNewProduct({...newProduct, category: val});
-                                }
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Category" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {DEFAULT_CATEGORIES.map(cat => (
-                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                ))}
-                                <SelectItem value="custom" className="text-primary font-bold">
-                                  + Add New Category
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
+                          <Select 
+                            value={newProduct.category} 
+                            onValueChange={(val) => setNewProduct({...newProduct, category: val})}
+                            required
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {activeCategories.map((cat: string) => (
+                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-[10px] text-muted-foreground mt-1">Manage these in the "Categories" tab.</p>
                         </div>
 
                         <div className="grid w-full items-center gap-1.5">
@@ -410,7 +366,6 @@ export default function AdminPage() {
               </Table>
             </Card>
 
-            {/* Edit Product Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
               <DialogContent className="sm:max-w-[425px]">
                 {editingProduct && (
@@ -431,45 +386,19 @@ export default function AdminPage() {
 
                       <div className="grid w-full items-center gap-1.5">
                         <Label htmlFor="edit-category">Category</Label>
-                        {useCustomCategory ? (
-                          <div className="flex gap-2">
-                            <Input 
-                              placeholder="Enter custom category" 
-                              value={customCategory} 
-                              onChange={(e) => setCustomCategory(e.target.value)} 
-                              autoFocus
-                            />
-                            <Button type="button" variant="ghost" size="icon" onClick={() => {
-                              setUseCustomCategory(false);
-                              setEditingProduct({...editingProduct, category: DEFAULT_CATEGORIES[0]});
-                            }}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Select 
-                            value={editingProduct.category} 
-                            onValueChange={(val) => {
-                              if (val === "custom") {
-                                setUseCustomCategory(true);
-                              } else {
-                                setEditingProduct({...editingProduct, category: val});
-                              }
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {DEFAULT_CATEGORIES.map(cat => (
-                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                              ))}
-                              <SelectItem value="custom" className="text-primary font-bold">
-                                + Add New Category
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
+                        <Select 
+                          value={editingProduct.category} 
+                          onValueChange={(val) => setEditingProduct({...editingProduct, category: val})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {activeCategories.map((cat: string) => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div className="grid w-full items-center gap-1.5">
@@ -502,6 +431,65 @@ export default function AdminPage() {
                 )}
               </DialogContent>
             </Dialog>
+          </TabsContent>
+
+          <TabsContent value="categories">
+            <Card>
+              <CardHeader>
+                <CardTitle>Manage Categories</CardTitle>
+                <CardDescription>Add, edit or delete categories for your product catalog.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="New category name..." 
+                    value={newCategoryName} 
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        editingCategoryIndex !== null ? handleSaveCategoryEdit() : handleAddCategory();
+                      }
+                    }}
+                  />
+                  {editingCategoryIndex !== null ? (
+                    <>
+                      <Button onClick={handleSaveCategoryEdit}>Save</Button>
+                      <Button variant="ghost" onClick={() => { setEditingCategoryIndex(null); setNewCategoryName(""); }}>Cancel</Button>
+                    </>
+                  ) : (
+                    <Button onClick={handleAddCategory}><Plus className="h-4 w-4 mr-2" /> Add</Button>
+                  )}
+                </div>
+
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Category Name</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {activeCategories.map((cat: string, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{cat}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon" onClick={() => handleEditCategory(index)} className="h-8 w-8 text-primary">
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteCategory(index)} className="h-8 w-8 text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="branding" className="space-y-6">

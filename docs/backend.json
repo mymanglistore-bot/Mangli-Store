@@ -60,6 +60,13 @@
         "logoImageUrl": {
           "type": "string",
           "description": "Base64 or URL of the store logo."
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of dynamic categories for the store."
         }
       }
     }
@@ -95,7 +102,7 @@
           "schema": {
             "$ref": "#/backend/entities/StoreSettings"
           },
-          "description": "Global store settings like hero images and logos.",
+          "description": "Global store settings like hero images, logos, and categories.",
           "params": []
         }
       }
