@@ -16,8 +16,8 @@ export function ProductCard({ product }: { product: Product }) {
   const currentPrice = Number(product.price) || 0;
   const originalPrice = product.originalPrice ? Number(product.originalPrice) : 0;
   
-  // Savings logic: only show if original price is truly higher
-  const hasDiscount = originalPrice > currentPrice;
+  // Savings logic: only show if product is marked as a discount deal AND original price is truly higher
+  const hasDiscount = !!product.isDiscounted && originalPrice > currentPrice;
   const savings = hasDiscount ? originalPrice - currentPrice : 0;
 
   return (
@@ -41,6 +41,7 @@ export function ProductCard({ product }: { product: Product }) {
               SAVE Rs. {savings}
             </Badge>
           )}
+          {/* Only show "Deal" badge if it's marked as discounted but doesn't have a specific savings amount */}
           {product.isDiscounted && !hasDiscount && product.inStock && (
             <Badge variant="secondary" className="bg-primary/90 text-primary-foreground border-none">
               <Tag className="h-3 w-3 mr-1" /> Deal
