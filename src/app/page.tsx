@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -59,22 +58,29 @@ export default function Home() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
-        {/* Hero Section */}
+        {/* Hero Section - OPTIMIZED FOR IMMEDIATE LOADING */}
         <section className="mb-12">
-          <div className="relative w-full overflow-hidden rounded-3xl bg-transparent">
-            <img 
-              src={settings?.heroImageUrl || "https://picsum.photos/seed/manglistore/600/200"} 
-              alt="Mangli.Store Banner" 
-              className="w-full h-auto max-h-[500px] object-cover block opacity-80"
-              data-ai-hint="grocery store banner"
-            />
+          <div className="relative w-full overflow-hidden rounded-3xl bg-muted aspect-[3/1] max-h-[500px]">
+            {settings?.heroImageUrl && (
+              <Image 
+                src={settings.heroImageUrl} 
+                alt="Mangli.Store Banner" 
+                fill
+                priority={true}
+                loading="eager"
+                className="object-cover block opacity-90"
+                sizes="100vw"
+              />
+            )}
+            {!settings?.heroImageUrl && !isLoading && (
+               <div className="w-full h-full bg-gradient-to-r from-primary/10 to-accent/10 animate-pulse" />
+            )}
           </div>
         </section>
 
         {/* Discount Corner Section */}
         <section className="mb-16">
           <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 p-6 md:p-10 border border-primary/20 shadow-inner">
-            {/* Decorative Orbs */}
             <div className="absolute top-0 right-0 -mt-10 -mr-10 h-40 w-40 bg-primary/20 rounded-full blur-3xl animate-pulse" />
             <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-40 w-40 bg-accent/20 rounded-full blur-3xl" />
             
@@ -163,7 +169,6 @@ export default function Home() {
                 alt="Mangli.Store Logo"
                 fill
                 className="object-contain"
-                data-ai-hint="grocery logo"
               />
             </div>
             <span className="font-headline font-bold text-xl tracking-tighter text-primary">
