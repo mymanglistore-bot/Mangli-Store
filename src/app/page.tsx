@@ -7,15 +7,17 @@ import { CartDrawer } from '@/components/CartDrawer';
 import { useCollection, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Product } from '@/lib/types';
-import { Loader2, Filter, TicketPercent, Sparkles } from 'lucide-react';
+import { Loader2, Filter, TicketPercent, Sparkles, Search, X } from 'lucide-react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 
 export default function Home() {
   const firestore = useFirestore();
   const logoPlaceholder = PlaceHolderImages.find(img => img.id === 'logo');
   const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
   
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -46,19 +48,35 @@ export default function Home() {
     return products.filter(p => p.isDiscounted);
   }, [products]);
 
-  // Catalog filtered by category, shows all products (including discounted ones)
+  // Catalog filtered by category AND search query
   const filteredProducts = useMemo(() => {
     if (!products) return [];
-    if (activeCategory === "All") return products;
-    return products.filter(p => p.category === activeCategory);
-  }, [products, activeCategory]);
+    
+    let result = products;
+
+    // Apply Category Filter
+    if (activeCategory !== "All") {
+      result = result.filter(p => p.category === activeCategory);
+    }
+
+    // Apply Search Filter
+    if (searchQuery.trim() !== "") {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(query) || 
+        p.description.toLowerCase().includes(query)
+      );
+    }
+
+    return result;
+  }, [products, activeCategory, searchQuery]);
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
-        {/* Hero Section - OPTIMIZED FOR IMMEDIATE LOADING */}
+        {/* Hero Section */}
         <section className="mb-12">
           <div className="relative w-full overflow-hidden rounded-3xl bg-transparent aspect-[3/1] max-h-[500px]">
             {settings?.heroImageUrl && (
@@ -120,18 +138,39 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Catalog Section */}
         <section id="products">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-            <h2 className="text-2xl font-headline font-bold">Our Catalog</h2>
-            
+          <div className="flex flex-col space-y-6 mb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <h2 className="text-2xl font-headline font-bold">Our Catalog</h2>
+              
+              <div className="relative w-full md:w-80 group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                <Input 
+                  placeholder="Search products..." 
+                  className="pl-10 h-10 rounded-full bg-muted/30 border-muted focus-visible:ring-primary pr-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted text-muted-foreground transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+
             {categories.length > 1 && (
-              <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
+              <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
                 <TabsList className="bg-muted/50 h-10 p-1 overflow-x-auto flex-nowrap justify-start max-w-full">
                   {categories.map((cat) => (
                     <TabsTrigger 
                       key={cat} 
                       value={cat}
-                      className="px-4 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                      className="px-4 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full"
                     >
                       {cat}
                     </TabsTrigger>
@@ -152,9 +191,16 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-transparent rounded-2xl border border-dashed flex flex-col items-center justify-center">
-              <Filter className="h-12 w-12 text-muted-foreground/30 mb-4" />
-              <p className="text-muted-foreground">No products found in this category.</p>
+            <div className="text-center py-20 bg-muted/10 rounded-3xl border border-dashed border-muted flex flex-col items-center justify-center">
+              <Search className="h-12 w-12 text-muted-foreground/30 mb-4" />
+              <p className="text-muted-foreground font-medium">No results found for "{searchQuery}"</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Try checking your spelling or using different keywords.</p>
+              <button 
+                onClick={() => { setSearchQuery(""); setActiveCategory("All"); }}
+                className="mt-6 text-sm font-bold text-primary hover:underline"
+              >
+                Clear all filters
+              </button>
             </div>
           )}
         </section>
