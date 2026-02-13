@@ -78,7 +78,7 @@ export default function Home() {
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <section className="mb-12">
-          <div className="relative w-full overflow-hidden rounded-3xl bg-muted aspect-[3/1] max-h-[500px]">
+          <div className="relative w-full overflow-hidden rounded-3xl bg-background aspect-[3/1] max-h-[500px]">
             {settings?.heroImageUrl && (
               <Image 
                 src={settings.heroImageUrl} 
@@ -86,12 +86,12 @@ export default function Home() {
                 fill
                 priority={true}
                 loading="eager"
-                className="object-cover block transition-opacity duration-500"
+                className="object-contain block transition-opacity duration-500"
                 sizes="100vw"
               />
             )}
             {!settings?.heroImageUrl && !isLoading && (
-               <div className="w-full h-full bg-gradient-to-r from-primary/10 to-accent/10 animate-pulse" />
+               <div className="w-full h-full bg-gradient-to-r from-primary/5 to-accent/5 animate-pulse" />
             )}
           </div>
         </section>
