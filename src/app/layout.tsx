@@ -1,12 +1,16 @@
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
-import {CartProvider} from '@/context/CartContext';
-import {Toaster} from '@/components/ui/toaster';
-import {FirebaseClientProvider} from '@/firebase';
+import { CartProvider } from '@/context/CartContext';
+import { Toaster } from '@/components/ui/toaster';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'Mangli.Store | Fresh & Clean Groceries',
   description: 'Your local eco-friendly grocery delivery service.',
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({
