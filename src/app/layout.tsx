@@ -7,10 +7,7 @@ import { FirebaseClientProvider } from '@/firebase';
 export const metadata: Metadata = {
   title: 'Mangli.Store | Fresh & Clean Groceries',
   description: 'Your local eco-friendly grocery delivery service.',
-  icons: {
-    icon: '/icon.png',
-    apple: '/icon.png',
-  },
+  // No manual icon path needed; Next.js 14 auto-detects icon.png in this folder
 };
 
 export default function RootLayout({
