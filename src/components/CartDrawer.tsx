@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -7,71 +6,86 @@ import {
   SheetContent, 
   SheetHeader, 
   SheetTitle, 
-  SheetTrigger,
-  SheetFooter
+  SheetTrigger
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Minus, Plus, Trash2, MapPin, AlertCircle, Clock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { ShoppingCart, Minus, Plus, Trash2, MapPin, AlertCircle, Clock, Loader2, CheckCircle2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { MAX_ORDER_LIMIT, WHATSAPP_NUMBER } from '@/lib/constants';
+import { MAX_ORDER_LIMIT } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useFirestore } from '@/firebase'; // Ensuring this matches your firebase export
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function CartDrawer() {
   const { cart, totals, updateQuantity, removeFromCart, clearCart } = useCart();
+  const firestore = useFirestore();
   const { toast } = useToast();
-  const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOrdered, setIsOrdered] = useState(false);
   const [isAfterHours, setIsAfterHours] = useState(false);
 
+  // Form State - The "Temporary Notepad"
+  const [customerInfo, setCustomerInfo] = useState({
+    name: '',
+    phone: '',
+    address: ''
+  });
+
+  const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const isOverLimit = totals.grandTotal > MAX_ORDER_LIMIT;
 
   useEffect(() => {
     const checkTime = () => {
       const now = new Date();
       const hour = now.getHours();
-      // Logic: After 8 PM (20) or before 6 AM (6) is considered after-hours
-      if (hour >= 20 || hour < 6) {
-        setIsAfterHours(true);
-      } else {
-        setIsAfterHours(false);
-      }
+      setIsAfterHours(hour >= 20 || hour < 6);
     };
-
     checkTime();
-    const interval = setInterval(checkTime, 60000); // Check every minute
-    return () => clearInterval(interval);
   }, []);
 
-  const handleCheckout = () => {
-    if (isOverLimit) {
-      toast({
-        variant: "destructive",
-        title: "Order Limit Exceeded",
-        description: `Maximum order limit is Rs. ${MAX_ORDER_LIMIT}. Please remove some items.`,
-      });
+  const handlePlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (isOverLimit) return;
+    if (customerInfo.phone.length !== 10) {
+      toast({ variant: "destructive", title: "Invalid Phone", description: "Please enter a 10-digit phone number." });
       return;
     }
 
-    let message = `*New Order Details* \n--------------------------\n`;
-    if (isAfterHours) {
-      message += `⚠️ _Note: Order placed after 8 PM. Delivery expected tomorrow morning._\n\n`;
-    }
-    cart.forEach(item => {
-      message += `• ${item.name} x ${item.quantity} ${item.unit || 'Unit'} = Rs. ${item.price * item.quantity}\n`;
-    });
-    message += `\n--------------------------\n`;
-    message += `*Subtotal:* Rs. ${totals.subtotal}\n`;
-    message += `*Delivery:* Rs. ${totals.deliveryCharge === 0 ? 'FREE' : totals.deliveryCharge}\n`;
-    message += `*Grand Total: Rs. ${totals.grandTotal}*\n\n`;
-    message += `📍 Please share your Google Maps location or full address below:`;
+    setIsSubmitting(true);
 
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
-    
-    window.open(whatsappUrl, '_blank');
-    clearCart();
+    try {
+      // Step 1: Save to Firebase "Vault"
+      if (firestore) {
+        await addDoc(collection(firestore, 'orders'), {
+          customerName: customerInfo.name,
+          customerPhone: customerInfo.phone,
+          address: customerInfo.address,
+          items: cart,
+          total: totals.grandTotal,
+          deliveryNote: isAfterHours ? "Next Day Delivery" : "Standard",
+          status: 'pending',
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      // Step 2: Show Success & Clear Cart
+      setIsOrdered(true);
+      clearCart();
+      toast({ title: "Order Placed!", description: "We will contact you on WhatsApp soon." });
+      
+    } catch (error) {
+      console.error("Order Error:", error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to place order. Try again." });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -86,115 +100,96 @@ export function CartDrawer() {
           )}
         </button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md flex flex-col">
+      <SheetContent className="w-full sm:max-w-md flex flex-col overflow-y-auto">
         <SheetHeader className="pb-4">
-          <SheetTitle className="font-headline text-2xl">Your Shopping Cart</SheetTitle>
+          <SheetTitle className="font-headline text-2xl">
+            {isOrdered ? "Order Confirmed" : "Your Shopping Cart"}
+          </SheetTitle>
         </SheetHeader>
         
-        <ScrollArea className="flex-grow pr-4">
-          {cart.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <ShoppingCart className="h-16 w-16 mb-4 opacity-20" />
-              <p>Your cart is empty.</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {cart.map((item) => (
-                <div key={item.id} className="flex gap-4">
-                  <div className="flex-grow">
-                    <h4 className="font-bold text-sm">{item.name}</h4>
-                    <p className="text-xs text-muted-foreground mb-2">Rs. {item.price} per {item.unit || 'Unit'}</p>
-                    <div className="flex items-center gap-3">
-                      <button 
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="h-6 w-6 rounded-full border flex items-center justify-center hover:bg-muted"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </button>
-                      <span className="text-sm font-medium">{item.quantity}</span>
-                      <button 
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="h-6 w-6 rounded-full border flex items-center justify-center hover:bg-muted"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </button>
+        {isOrdered ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
+            <CheckCircle2 className="h-20 w-20 text-green-500 animate-in zoom-in" />
+            <h3 className="text-xl font-bold">Thank You, {customerInfo.name}!</h3>
+            <p className="text-muted-foreground text-sm">
+              We have received your order. Our team will message you on **{customerInfo.phone}** to confirm the delivery time.
+            </p>
+            <Button onClick={() => setIsOrdered(false)} variant="outline">Back to Shop</Button>
+          </div>
+        ) : cart.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <ShoppingCart className="h-16 w-16 mb-4 opacity-20" />
+            <p>Your cart is empty.</p>
+          </div>
+        ) : (
+          <div className="space-y-6 flex-grow">
+            <ScrollArea className="h-[30vh] pr-4 border-b pb-4">
+              <div className="space-y-4">
+                {cart.map((item) => (
+                  <div key={item.id} className="flex justify-between items-center bg-muted/20 p-2 rounded-lg">
+                    <div className="flex-grow">
+                      <h4 className="font-bold text-sm">{item.name}</h4>
+                      <p className="text-xs text-muted-foreground">Rs. {item.price} x {item.quantity}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="h-6 w-6 border rounded-full flex items-center justify-center text-xs">-</button>
+                      <span className="text-sm font-bold">{item.quantity}</span>
+                      <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="h-6 w-6 border rounded-full flex items-center justify-center text-xs">+</button>
+                      <button onClick={() => removeFromCart(item.id)} className="ml-2 text-destructive"><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </div>
-                  <div className="text-right flex flex-col justify-between items-end">
-                    <span className="font-bold text-sm">Rs. {item.price * item.quantity}</span>
-                    <button 
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-destructive hover:bg-destructive/10 p-1 rounded"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </ScrollArea>
+
+            {/* Delivery Form - The New Privacy Section */}
+            <div className="space-y-4 py-2">
+              <h3 className="text-sm font-bold flex items-center gap-2"><MapPin className="h-4 w-4" /> Delivery Details</h3>
+              <div className="space-y-3">
+                <Input 
+                  placeholder="Your Full Name" 
+                  value={customerInfo.name}
+                  onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
+                  required
+                />
+                <Input 
+                  placeholder="WhatsApp Number (10 Digits)" 
+                  type="tel"
+                  maxLength={10}
+                  value={customerInfo.phone}
+                  onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value.replace(/\D/g, '')})}
+                  required
+                />
+                <Textarea 
+                  placeholder="Full Delivery Address" 
+                  value={customerInfo.address}
+                  onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
+                  required
+                />
+              </div>
             </div>
-          )}
-        </ScrollArea>
 
-        {cart.length > 0 && (
-          <div className="pt-6 mt-auto space-y-4">
-            <Separator />
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>Rs. {totals.subtotal}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Delivery Fee</span>
-                <span className={totals.deliveryCharge === 0 ? "text-primary font-bold" : ""}>
-                  {totals.deliveryCharge === 0 ? "FREE" : `Rs. ${totals.deliveryCharge}`}
-                </span>
-              </div>
-              
-              {totals.subtotal < 300 && totals.subtotal > 0 && (
-                <p className="text-[10px] text-muted-foreground italic text-center">
-                  Add Rs. {300 - totals.subtotal} more for FREE delivery!
-                </p>
-              )}
-
+            <div className="space-y-2 bg-muted/30 p-4 rounded-xl">
+              <div className="flex justify-between text-sm"><span>Subtotal</span><span>Rs. {totals.subtotal}</span></div>
+              <div className="flex justify-between text-sm"><span>Delivery</span><span>{totals.deliveryCharge === 0 ? "FREE" : `Rs. ${totals.deliveryCharge}`}</span></div>
               <Separator />
-              <div className="flex justify-between font-bold text-lg pt-2">
-                <span>Total</span>
-                <span className={isOverLimit ? "text-destructive" : ""}>Rs. {totals.grandTotal}</span>
-              </div>
+              <div className="flex justify-between font-bold text-lg"><span>Total</span><span>Rs. {totals.grandTotal}</span></div>
             </div>
 
             {isAfterHours && (
-              <Alert className="bg-primary/5 border-primary/20 py-2">
-                <Clock className="h-4 w-4 text-primary" />
-                <AlertTitle className="text-xs font-bold">Night Delivery Notice</AlertTitle>
-                <AlertDescription className="text-[10px]">
-                  Order timings are 6AM to 8AM. Your order will deliver tomorrow morning.
-                </AlertDescription>
+              <Alert className="bg-orange-50 border-orange-200">
+                <Clock className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-xs text-orange-800">Note: It's late! Delivery will be made tomorrow morning.</AlertDescription>
               </Alert>
             )}
 
-            {isOverLimit && (
-              <Alert variant="destructive" className="py-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle className="text-xs font-bold">Limit Exceeded</AlertTitle>
-                <AlertDescription className="text-[10px]">
-                  Maximum order limit is Rs. {MAX_ORDER_LIMIT}. Please remove some items to proceed.
-                </AlertDescription>
-              </Alert>
-            )}
-            
             <Button 
-              className="w-full h-12 text-lg font-bold"
-              onClick={handleCheckout}
-              disabled={isOverLimit}
+              className="w-full h-14 text-lg font-bold shadow-lg"
+              onClick={handlePlaceOrder}
+              disabled={isOverLimit || isSubmitting || !customerInfo.name || !customerInfo.address || customerInfo.phone.length < 10}
             >
-              Order via WhatsApp
+              {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</> : "Place Order Now"}
             </Button>
-            
-            <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-1">
-              <MapPin className="h-3 w-3" />
-              You will share your location on WhatsApp
-            </p>
           </div>
         )}
       </SheetContent>
