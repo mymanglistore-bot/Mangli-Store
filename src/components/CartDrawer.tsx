@@ -1,5 +1,5 @@
 "use client";
-
+import emailjs from '@emailjs/browser';
 import React, { useState, useEffect } from 'react';
 import { 
   Sheet, 
@@ -18,7 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { MAX_ORDER_LIMIT } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useFirestore } from '@/firebase'; // Ensuring this matches your firebase export
+import { useFirestore } from '@/firebase'; 
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function CartDrawer() {
@@ -75,14 +75,27 @@ export function CartDrawer() {
         });
       }
 
-      // Step 2: Show Success & Clear Cart
+      // Step 2: Send Gmail Alert via EmailJS
+      await emailjs.send(
+        'service_orders',     // Your Service ID
+        'template_hc2nhxk',   // Your Template ID
+        {
+          customerName: customerInfo.name,
+          customerPhone: customerInfo.phone,
+          address: customerInfo.address,
+          total: totals.grandTotal.toFixed(2),
+        },
+        'hR3yYN2MpOAeDCoRl'    // Your Public Key
+      );
+
+      // Step 3: Show Success & Clear Cart
       setIsOrdered(true);
       clearCart();
-      toast({ title: "Order Placed!", description: "We will contact you on WhatsApp soon." });
+      toast({ title: "Order Placed!", description: "Notification sent to store and WhatsApp." });
       
     } catch (error) {
       console.error("Order Error:", error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to place order. Try again." });
+      toast({ variant: "destructive", title: "Error", description: "Something went wrong. Please check your connection." });
     } finally {
       setIsSubmitting(false);
     }
@@ -142,7 +155,6 @@ export function CartDrawer() {
               </div>
             </ScrollArea>
 
-            {/* Delivery Form - The New Privacy Section */}
             <div className="space-y-4 py-2">
               <h3 className="text-sm font-bold flex items-center gap-2"><MapPin className="h-4 w-4" /> Delivery Details</h3>
               <div className="space-y-3">
