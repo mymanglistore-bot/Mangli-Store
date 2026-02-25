@@ -30,7 +30,7 @@ export function CartDrawer() {
   const [isOrdered, setIsOrdered] = useState(false);
   const [isAfterHours, setIsAfterHours] = useState(false);
 
-  // Form State - The "Temporary Notepad"
+  // Form State
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     phone: '',
@@ -61,7 +61,7 @@ export function CartDrawer() {
     setIsSubmitting(true);
 
     try {
-      // Step 1: Save to Firebase "Vault"
+      // 1. Save to Firebase
       if (firestore) {
         await addDoc(collection(firestore, 'orders'), {
           customerName: customerInfo.name,
@@ -75,27 +75,33 @@ export function CartDrawer() {
         });
       }
 
-      // Step 2: Send Gmail Alert via EmailJS
+      // 2. Format Items for Email
+      const itemsList = cart.map(item => 
+        `- ${item.name} (x${item.quantity}) - Rs. ${item.price * item.quantity}`
+      ).join('\n');
+
+      // 3. Send Gmail Alert via EmailJS
       await emailjs.send(
-        'service_orders',     // Your Service ID
-        'template_hc2nhxk',   // Your Template ID
+        'service_orders',     
+        'template_hc2nhxk',   
         {
           customerName: customerInfo.name,
           customerPhone: customerInfo.phone,
           address: customerInfo.address,
           total: totals.grandTotal.toFixed(2),
+          itemList: itemsList, // This is the new variable for your template
         },
-        'hR3yYN2MpOAeDCoRl'    // Your Public Key
+        'hR3yYN2MpOAeDCoRl'    
       );
 
-      // Step 3: Show Success & Clear Cart
+      // 4. Success
       setIsOrdered(true);
       clearCart();
       toast({ title: "Order Placed!", description: "Notification sent to store and WhatsApp." });
       
     } catch (error) {
       console.error("Order Error:", error);
-      toast({ variant: "destructive", title: "Error", description: "Something went wrong. Please check your connection." });
+      toast({ variant: "destructive", title: "Error", description: "Failed to place order. Try again." });
     } finally {
       setIsSubmitting(false);
     }
