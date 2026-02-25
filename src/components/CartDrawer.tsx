@@ -60,8 +60,22 @@ export function CartDrawer() {
 
     setIsSubmitting(true);
 
+    // 1. Prepare Item List First (Ensures data is ready for Email & WhatsApp)
+    const itemsList = cart.map(item => 
+      `- ${item.name} (x${item.quantity})`
+    ).join('\n');
+
+    const whatsappNumber = "918333931010";
+    const message = `*New Order from Mangli Store*%0A%0A` +
+                    `*Name:* ${customerInfo.name}%0A` +
+                    `*Items:*%0A${itemsList.replace(/\n/g, '%0A')}%0A%0A` +
+                    `*Total:* Rs. ${totals.grandTotal}%0A` +
+                    `*Address:* ${customerInfo.address}`;
+    
+    const whatsappURL = `https://wa.me/${whatsappNumber}?text=${message}`;
+
     try {
-      // 1. Save to Firebase "Vault"
+      // 2. Save to Firebase
       if (firestore) {
         await addDoc(collection(firestore, 'orders'), {
           customerName: customerInfo.name,
@@ -75,12 +89,7 @@ export function CartDrawer() {
         });
       }
 
-      // 2. Format Items for Email and WhatsApp
-      const itemsList = cart.map(item => 
-        `- ${item.name} (x${item.quantity}) - Rs. ${item.price * item.quantity}`
-      ).join('\n');
-
-      // 3. Send Gmail Alert via EmailJS
+      // 3. Send Email Alert via EmailJS
       await emailjs.send(
         'service_orders',     
         'template_hc2nhxk',   
@@ -94,28 +103,17 @@ export function CartDrawer() {
         'hR3yYN2MpOAeDCoRl'    
       );
 
-      // 4. Generate WhatsApp Redirect
-      const whatsappNumber = "918333931010"; // Your number with country code
-      const message = `*New Order from Mangli Store*%0A%0A` +
-                      `*Name:* ${customerInfo.name}%0A` +
-                      `*Items:*%0A${itemsList.replace(/\n/g, '%0A')}%0A%0A` +
-                      `*Total:* Rs. ${totals.grandTotal}%0A` +
-                      `*Address:* ${customerInfo.address}`;
-      
-      const whatsappURL = `https://wa.me/${whatsappNumber}?text=${message}`;
-
-      // 5. Success State
-      setIsOrdered(true);
+      // 4. Clear Cart and Update UI
       clearCart();
+      setIsOrdered(true);
       
-      // Open WhatsApp in a new tab
-      window.open(whatsappURL, '_blank');
+      // 5. Direct WhatsApp Redirect
+      // We use location.href to ensure it opens on mobile without being blocked
+      window.location.href = whatsappURL;
 
-      toast({ title: "Order Placed!", description: "Notification sent to Gmail and WhatsApp." });
-      
     } catch (error) {
       console.error("Order Error:", error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to place order. Please check your internet." });
+      toast({ variant: "destructive", title: "Error", description: "Failed to place order. Please try again." });
     } finally {
       setIsSubmitting(false);
     }
@@ -136,16 +134,16 @@ export function CartDrawer() {
       <SheetContent className="w-full sm:max-w-md flex flex-col overflow-y-auto">
         <SheetHeader className="pb-4">
           <SheetTitle className="font-headline text-2xl">
-            {isOrdered ? "Order Confirmed" : "Your Shopping Cart"}
+            {isOrdered ? "Order Confirmed!" : "Your Shopping Cart"}
           </SheetTitle>
         </SheetHeader>
         
         {isOrdered ? (
           <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
             <CheckCircle2 className="h-20 w-20 text-green-500 animate-in zoom-in" />
-            <h3 className="text-xl font-bold">Thank You! Order Received, {customerInfo.name}!</h3>
+            <h3 className="text-xl font-bold">Thank You! Order Received</h3>
             <p className="text-muted-foreground text-sm">
-              We have received your order. We are opening WhatsApp to share your receipt.
+              We are opening WhatsApp now to share your receipt. If it doesn't open, please check your internet connection.
             </p>
             <Button onClick={() => setIsOrdered(false)} variant="outline">Back to Shop</Button>
           </div>
