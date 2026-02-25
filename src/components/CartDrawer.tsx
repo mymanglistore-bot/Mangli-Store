@@ -143,7 +143,7 @@ export function CartDrawer() {
         {isOrdered ? (
           <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
             <CheckCircle2 className="h-20 w-20 text-green-500 animate-in zoom-in" />
-            <h3 className="text-xl font-bold">Thank You, {customerInfo.name}!</h3>
+            <h3 className="text-xl font-bold">Thank You! Order Received, {customerInfo.name}!</h3>
             <p className="text-muted-foreground text-sm">
               We have received your order. We are opening WhatsApp to share your receipt.
             </p>
