@@ -61,7 +61,7 @@ export function CartDrawer() {
     setIsSubmitting(true);
 
     try {
-      // 1. Save to Firebase
+      // 1. Save to Firebase "Vault"
       if (firestore) {
         await addDoc(collection(firestore, 'orders'), {
           customerName: customerInfo.name,
@@ -75,7 +75,7 @@ export function CartDrawer() {
         });
       }
 
-      // 2. Format Items for Email
+      // 2. Format Items for Email and WhatsApp
       const itemsList = cart.map(item => 
         `- ${item.name} (x${item.quantity}) - Rs. ${item.price * item.quantity}`
       ).join('\n');
@@ -89,19 +89,33 @@ export function CartDrawer() {
           customerPhone: customerInfo.phone,
           address: customerInfo.address,
           total: totals.grandTotal.toFixed(2),
-          itemList: itemsList, // This is the new variable for your template
+          itemList: itemsList, 
         },
         'hR3yYN2MpOAeDCoRl'    
       );
 
-      // 4. Success
+      // 4. Generate WhatsApp Redirect
+      const whatsappNumber = "918333931010"; // Your number with country code
+      const message = `*New Order from Mangli Store*%0A%0A` +
+                      `*Name:* ${customerInfo.name}%0A` +
+                      `*Items:*%0A${itemsList.replace(/\n/g, '%0A')}%0A%0A` +
+                      `*Total:* Rs. ${totals.grandTotal}%0A` +
+                      `*Address:* ${customerInfo.address}`;
+      
+      const whatsappURL = `https://wa.me/${whatsappNumber}?text=${message}`;
+
+      // 5. Success State
       setIsOrdered(true);
       clearCart();
-      toast({ title: "Order Placed!", description: "Notification sent to store and WhatsApp." });
+      
+      // Open WhatsApp in a new tab
+      window.open(whatsappURL, '_blank');
+
+      toast({ title: "Order Placed!", description: "Notification sent to Gmail and WhatsApp." });
       
     } catch (error) {
       console.error("Order Error:", error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to place order. Try again." });
+      toast({ variant: "destructive", title: "Error", description: "Failed to place order. Please check your internet." });
     } finally {
       setIsSubmitting(false);
     }
@@ -131,7 +145,7 @@ export function CartDrawer() {
             <CheckCircle2 className="h-20 w-20 text-green-500 animate-in zoom-in" />
             <h3 className="text-xl font-bold">Thank You, {customerInfo.name}!</h3>
             <p className="text-muted-foreground text-sm">
-              We have received your order. Our team will message you on **{customerInfo.phone}** to confirm the delivery time.
+              We have received your order. We are opening WhatsApp to share your receipt.
             </p>
             <Button onClick={() => setIsOrdered(false)} variant="outline">Back to Shop</Button>
           </div>
