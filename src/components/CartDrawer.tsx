@@ -11,13 +11,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ShoppingCart, Minus, Plus, Trash2, MapPin, AlertCircle, Clock, Loader2, CheckCircle2 } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Trash2, MapPin, Clock, Loader2, CheckCircle2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { MAX_ORDER_LIMIT } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useFirestore } from '@/firebase'; 
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -30,7 +30,6 @@ export function CartDrawer() {
   const [isOrdered, setIsOrdered] = useState(false);
   const [isAfterHours, setIsAfterHours] = useState(false);
 
-  // Form State
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     phone: '',
@@ -60,16 +59,23 @@ export function CartDrawer() {
 
     setIsSubmitting(true);
 
-    // 1. Prepare Item List First (Ensures data is ready for Email & WhatsApp)
-    const itemsList = cart.map(item => 
-      `- ${item.name} (x${item.quantity})`
+    // 1. Prepare THE FULL SUMMARY (Items + Charges)
+    const itemsText = cart.map(item => 
+      `- ${item.name} (x${item.quantity}): Rs. ${item.price * item.quantity}`
     ).join('\n');
+
+    const fullSummary = 
+      `${itemsText}\n` +
+      `--------------------------------\n` +
+      `Subtotal: Rs. ${totals.subtotal}\n` +
+      `Delivery: ${totals.deliveryCharge === 0 ? "FREE" : `Rs. ${totals.deliveryCharge}`}\n` +
+      `Grand Total: Rs. ${totals.grandTotal}`;
 
     const whatsappNumber = "918333931010";
     const message = `*New Order from Mangli Store*%0A%0A` +
                     `*Name:* ${customerInfo.name}%0A` +
-                    `*Items:*%0A${itemsList.replace(/\n/g, '%0A')}%0A%0A` +
-                    `*Total:* Rs. ${totals.grandTotal}%0A` +
+                    `*Phone:* ${customerInfo.phone}%0A%0A` +
+                    `*Order Details:*%0A${fullSummary.replace(/\n/g, '%0A')}%0A%0A` +
                     `*Address:* ${customerInfo.address}`;
     
     const whatsappURL = `https://wa.me/${whatsappNumber}?text=${message}`;
@@ -82,14 +88,15 @@ export function CartDrawer() {
           customerPhone: customerInfo.phone,
           address: customerInfo.address,
           items: cart,
+          subtotal: totals.subtotal,
+          deliveryCharge: totals.deliveryCharge,
           total: totals.grandTotal,
-          deliveryNote: isAfterHours ? "Next Day Delivery" : "Standard",
           status: 'pending',
           createdAt: serverTimestamp(),
         });
       }
 
-      // 3. Send Email Alert via EmailJS
+      // 3. Send EmailJS (sending the full summary to itemList variable)
       await emailjs.send(
         'service_orders',     
         'template_hc2nhxk',   
@@ -98,22 +105,21 @@ export function CartDrawer() {
           customerPhone: customerInfo.phone,
           address: customerInfo.address,
           total: totals.grandTotal.toFixed(2),
-          itemList: itemsList, 
+          itemList: fullSummary, 
         },
         'hR3yYN2MpOAeDCoRl'    
       );
 
-      // 4. Clear Cart and Update UI
+      // 4. Update UI & Clear Cart
       clearCart();
       setIsOrdered(true);
       
-      // 5. Direct WhatsApp Redirect
-      // We use location.href to ensure it opens on mobile without being blocked
+      // 5. Redirect to WhatsApp
       window.location.href = whatsappURL;
 
     } catch (error) {
       console.error("Order Error:", error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to place order. Please try again." });
+      toast({ variant: "destructive", title: "Error", description: "Failed to place order." });
     } finally {
       setIsSubmitting(false);
     }
@@ -134,16 +140,16 @@ export function CartDrawer() {
       <SheetContent className="w-full sm:max-w-md flex flex-col overflow-y-auto">
         <SheetHeader className="pb-4">
           <SheetTitle className="font-headline text-2xl">
-            {isOrdered ? "Order Confirmed!" : "Your Shopping Cart"}
+            {isOrdered ? "Order Sent!" : "Your Shopping Cart"}
           </SheetTitle>
         </SheetHeader>
         
         {isOrdered ? (
           <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
             <CheckCircle2 className="h-20 w-20 text-green-500 animate-in zoom-in" />
-            <h3 className="text-xl font-bold">Thank You! Order Received</h3>
+            <h3 className="text-xl font-bold">Success!</h3>
             <p className="text-muted-foreground text-sm">
-              We are opening WhatsApp now to share your receipt. If it doesn't open, please check your internet connection.
+              WhatsApp is opening with your order summary. Please click "Send" in WhatsApp to finish.
             </p>
             <Button onClick={() => setIsOrdered(false)} variant="outline">Back to Shop</Button>
           </div>
@@ -201,7 +207,7 @@ export function CartDrawer() {
 
             <div className="space-y-2 bg-muted/30 p-4 rounded-xl">
               <div className="flex justify-between text-sm"><span>Subtotal</span><span>Rs. {totals.subtotal}</span></div>
-              <div className="flex justify-between text-sm"><span>Delivery</span><span>{totals.deliveryCharge === 0 ? "FREE" : `Rs. ${totals.deliveryCharge}`}</span></div>
+              <div className="flex justify-between text-sm"><span>Delivery Charge</span><span>{totals.deliveryCharge === 0 ? "FREE" : `Rs. ${totals.deliveryCharge}`}</span></div>
               <Separator />
               <div className="flex justify-between font-bold text-lg"><span>Total</span><span>Rs. {totals.grandTotal}</span></div>
             </div>
@@ -209,7 +215,7 @@ export function CartDrawer() {
             {isAfterHours && (
               <Alert className="bg-orange-50 border-orange-200">
                 <Clock className="h-4 w-4 text-orange-600" />
-                <AlertDescription className="text-xs text-orange-800">Note: It's late! Delivery will be made tomorrow morning.</AlertDescription>
+                <AlertDescription className="text-xs text-orange-800">Note: Orders placed now will be delivered tomorrow morning.</AlertDescription>
               </Alert>
             )}
 
@@ -218,7 +224,7 @@ export function CartDrawer() {
               onClick={handlePlaceOrder}
               disabled={isOverLimit || isSubmitting || !customerInfo.name || !customerInfo.address || customerInfo.phone.length < 10}
             >
-              {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</> : "Place Order Now"}
+              {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</> : "Place Order via WhatsApp"}
             </Button>
           </div>
         )}
